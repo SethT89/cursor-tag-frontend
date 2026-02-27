@@ -70,10 +70,15 @@ const Index = () => {
           setTimeLeft(msg.timeLeft);
           break;
         case 'gameEnded':
-          setResults(msg.players);
-          setLeaderboard(msg.leaderboard || []);
-          setPhase('results');
-          break;
+  setResults(msg.players);
+  setLeaderboard(msg.leaderboard || []);
+  setPhase('results');
+  break;
+case 'playAgain':
+  setPlayers(msg.players);
+  setPhase('lobby');
+  setResults([]);
+  break;
         case 'error':
           setError(msg.message);
           break;
@@ -103,9 +108,10 @@ const Index = () => {
   }, [send]);
 
   const handlePlayAgain = useCallback(() => {
-    setPhase('lobby');
-    setResults([]);
-  }, []);
+  send({ type: 'playAgain' });
+  setPhase('lobby');
+  setResults([]);
+}, [send]);
 
   const handleHome = useCallback(() => {
     setPhase('home');
