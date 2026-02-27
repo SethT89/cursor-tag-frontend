@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { ServerMessage } from '../game/gameTypes';
+import { ServerMessage } from './gameTypes';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
 
@@ -13,30 +13,23 @@ export function useGameSocket() {
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
-
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
-
     ws.onopen = () => {
       setConnected(true);
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
     };
-
     ws.onmessage = (event) => {
       try {
         const msg: ServerMessage = JSON.parse(event.data);
         handlersRef.current.forEach(h => h(msg));
       } catch {}
     };
-
     ws.onclose = () => {
       setConnected(false);
       reconnectTimer.current = setTimeout(connect, 2000);
     };
-
-    ws.onerror = () => {
-      ws.close();
-    };
+    ws.onerror = () => { ws.close(); };
   }, []);
 
   useEffect(() => {
