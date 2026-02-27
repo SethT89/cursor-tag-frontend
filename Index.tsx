@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import HomeScreen from '../components/HomeScreen';
-import LobbyScreen from '../components/LobbyScreen';
-import GameArena from '../components/GameArena';
-import ResultsScreen from '../components/ResultsScreen';
-import { Player, LeaderboardEntry, GamePhase, ServerMessage } from '../game/gameTypes';
-import { useGameSocket } from '../hooks/useGameSocket';
+import HomeScreen from './HomeScreen';
+import LobbyScreen from './LobbyScreen';
+import GameArena from './GameArena';
+import ResultsScreen from './ResultsScreen';
+import { Player, LeaderboardEntry, GamePhase, ServerMessage } from './gameTypes';
+import { useGameSocket } from './useGameSocket';
 
 const Index = () => {
   const { send, onMessage, connected } = useGameSocket();
@@ -21,16 +21,14 @@ const Index = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [error, setError] = useState<string>('');
 
-  // Throttled mouse move sender
   const lastSentRef = useRef(0);
   const handleMouseMove = useCallback((x: number, y: number) => {
     const now = Date.now();
-    if (now - lastSentRef.current < 50) return; // max 20/s
+    if (now - lastSentRef.current < 50) return;
     lastSentRef.current = now;
     send({ type: 'move', x, y });
   }, [send]);
 
-  // Message handler
   useEffect(() => {
     const unsubscribe = onMessage((msg: ServerMessage) => {
       switch (msg.type) {
@@ -43,7 +41,6 @@ const Index = () => {
           setError('');
           setPhase('lobby');
           break;
-
         case 'roomJoined':
           setRoomCode(msg.roomCode);
           setLocalPlayerId(msg.playerId);
@@ -52,17 +49,14 @@ const Index = () => {
           setError('');
           setPhase('lobby');
           break;
-
         case 'playerJoined':
         case 'playerLeft':
           setPlayers(msg.players);
           break;
-
         case 'countdown':
           setCountdown(msg.count);
           if (phase !== 'countdown') setPhase('countdown');
           break;
-
         case 'gameStarted':
           setPlayers(msg.players);
           setItPlayerId(msg.itPlayerId);
@@ -70,23 +64,16 @@ const Index = () => {
           setCountdown(null);
           setPhase('playing');
           break;
-
         case 'gameState':
           setPlayers(msg.players);
           setItPlayerId(msg.itPlayerId);
           setTimeLeft(msg.timeLeft);
           break;
-
-        case 'tagged':
-          // Visual feedback handled by gameState updates
-          break;
-
         case 'gameEnded':
           setResults(msg.players);
           setLeaderboard(msg.leaderboard || []);
           setPhase('results');
           break;
-
         case 'error':
           setError(msg.message);
           break;
@@ -95,7 +82,6 @@ const Index = () => {
     return unsubscribe;
   }, [onMessage, phase]);
 
-  // Fetch leaderboard on connect
   useEffect(() => {
     if (connected && phase === 'home') {
       send({ type: 'getLeaderboard' });
@@ -119,10 +105,6 @@ const Index = () => {
   const handlePlayAgain = useCallback(() => {
     setPhase('lobby');
     setResults([]);
-    setPlayers(prev => {
-      // Players stay in lobby — server handles reset
-      return prev;
-    });
   }, []);
 
   const handleHome = useCallback(() => {
@@ -137,54 +119,17 @@ const Index = () => {
   }, [send]);
 
   if (phase === 'home') {
-    return (
-      <HomeScreen
-        onCreateGame={handleCreateGame}
-        onJoinGame={handleJoinGame}
-        leaderboard={leaderboard}
-        connected={connected}
-        error={error}
-      />
-    );
+    return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} leaderboard={leaderboard} connected={connected} error={error} />;
   }
-
   if (phase === 'lobby') {
-    return (
-      <LobbyScreen
-        roomCode={roomCode}
-        players={players}
-        localPlayerId={localPlayerId}
-        isHost={isHost}
-        onStartGame={handleStartGame}
-        onBack={handleHome}
-      />
-    );
+    return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} onStartGame={handleStartGame} onBack={handleHome} />;
   }
-
   if (phase === 'countdown' || phase === 'playing') {
-    return (
-      <GameArena
-        players={players}
-        localPlayerId={localPlayerId}
-        itPlayerId={itPlayerId}
-        timeLeft={timeLeft}
-        countdown={phase === 'countdown' ? countdown : null}
-        onMouseMove={handleMouseMove}
-      />
-    );
+    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} onMouseMove={handleMouseMove} />;
   }
-
   if (phase === 'results') {
-    return (
-      <ResultsScreen
-        players={results}
-        leaderboard={leaderboard}
-        onPlayAgain={handlePlayAgain}
-        onHome={handleHome}
-      />
-    );
+    return <ResultsScreen players={results} leaderboard={leaderboard} onPlayAgain={handlePlayAgain} onHome={handleHome} />;
   }
-
   return null;
 };
 
