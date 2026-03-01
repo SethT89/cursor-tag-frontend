@@ -2,25 +2,48 @@ export interface Player {
   id: string;
   name: string;
   color: string;
-  x: number; // 0-100 percentage
-  y: number; // 0-100 percentage
+  x: number;
+  y: number;
   isIt: boolean;
   immune: boolean;
   wasEverIt: boolean;
   timeNotIt: number;
   tagsMade: number;
   fastestTag: number | null;
+  timesTagged: number;
+  retags: number;
+  totalDistance: number;
   // Results only
   score?: number;
   rank?: number;
   isLoser?: boolean;
+  award?: Award | null;
   stats?: {
     timeNotIt: number;
     tagsMade: number;
     fastestTag: number | null;
     survivedUntagged: boolean;
     itAtEnd: boolean;
+    timesTagged: number;
+    retags: number;
+    totalDistance: number;
+    opportunistTags: number;
+    shortestItStreak: number | null;
   };
+}
+
+export interface Award {
+  emoji: string;
+  title: string;
+  desc: string;
+}
+
+export interface LiveScore {
+  id: string;
+  name: string;
+  color: string;
+  score: number;
+  isIt: boolean;
 }
 
 export interface LeaderboardEntry {
@@ -40,8 +63,9 @@ export type ServerMessage =
   | { type: 'playerLeft'; players: Player[] }
   | { type: 'countdown'; count: number }
   | { type: 'gameStarted'; players: Player[]; itPlayerId: string; duration: number }
-  | { type: 'gameState'; players: Player[]; itPlayerId: string; timeLeft: number }
+  | { type: 'gameState'; players: Player[]; itPlayerId: string; timeLeft: number; liveScores: LiveScore[] }
   | { type: 'tagged'; newItId: string; taggerId: string }
   | { type: 'gameEnded'; players: Player[]; leaderboard: LeaderboardEntry[] }
+  | { type: 'playAgain'; players: Player[] }
   | { type: 'leaderboard'; leaderboard: LeaderboardEntry[] }
   | { type: 'error'; message: string };
