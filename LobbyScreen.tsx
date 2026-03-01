@@ -39,11 +39,10 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0f0f1a 0%, #1a0f2e 50%, #0f1a2e 100%)',
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
       fontFamily: "'Inter', 'Segoe UI', sans-serif", color: 'white', padding: '20px',
       overflowY: 'auto',
     }}>
-      <div style={{ width: '100%', maxWidth: '520px' }}>
+      <div style={{ width: '100%', maxWidth: '520px', margin: '0 auto', paddingTop: '40px', paddingBottom: '40px' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
