@@ -3,7 +3,7 @@ import HomeScreen from './HomeScreen';
 import LobbyScreen from './LobbyScreen';
 import GameArena from './GameArena';
 import ResultsScreen from './ResultsScreen';
-import { Player, LeaderboardEntry, GamePhase, ServerMessage } from './gameTypes';
+import { Player, LeaderboardEntry, LiveScore, GamePhase, ServerMessage } from './gameTypes';
 import { useGameSocket } from './useGameSocket';
 
 const Index = () => {
@@ -17,6 +17,7 @@ const Index = () => {
   const [itPlayerId, setItPlayerId] = useState('');
   const [timeLeft, setTimeLeft] = useState(60000);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [liveScores, setLiveScores] = useState<LiveScore[]>([]);
   const [results, setResults] = useState<Player[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [error, setError] = useState<string>('');
@@ -62,23 +63,25 @@ const Index = () => {
           setItPlayerId(msg.itPlayerId);
           setTimeLeft(msg.duration);
           setCountdown(null);
+          setLiveScores([]);
           setPhase('playing');
           break;
         case 'gameState':
           setPlayers(msg.players);
           setItPlayerId(msg.itPlayerId);
           setTimeLeft(msg.timeLeft);
+          if (msg.liveScores) setLiveScores(msg.liveScores);
           break;
         case 'gameEnded':
-  setResults(msg.players);
-  setLeaderboard(msg.leaderboard || []);
-  setPhase('results');
-  break;
-case 'playAgain':
-  setPlayers(msg.players);
-  setPhase('lobby');
-  setResults([]);
-  break;
+          setResults(msg.players);
+          setLeaderboard(msg.leaderboard || []);
+          setPhase('results');
+          break;
+        case 'playAgain':
+          setPlayers(msg.players);
+          setPhase('lobby');
+          setResults([]);
+          break;
         case 'error':
           setError(msg.message);
           break;
@@ -88,9 +91,7 @@ case 'playAgain':
   }, [onMessage, phase]);
 
   useEffect(() => {
-    if (connected && phase === 'home') {
-      send({ type: 'getLeaderboard' });
-    }
+    if (connected && phase === 'home') send({ type: 'getLeaderboard' });
   }, [connected, send, phase]);
 
   const handleCreateGame = useCallback((name: string) => {
@@ -103,15 +104,13 @@ case 'playAgain':
     send({ type: 'joinRoom', name, roomCode: code });
   }, [send]);
 
-  const handleStartGame = useCallback(() => {
-    send({ type: 'startGame' });
-  }, [send]);
+  const handleStartGame = useCallback(() => { send({ type: 'startGame' }); }, [send]);
 
   const handlePlayAgain = useCallback(() => {
-  send({ type: 'playAgain' });
-  setPhase('lobby');
-  setResults([]);
-}, [send]);
+    send({ type: 'playAgain' });
+    setPhase('lobby');
+    setResults([]);
+  }, [send]);
 
   const handleHome = useCallback(() => {
     setPhase('home');
@@ -124,18 +123,18 @@ case 'playAgain':
     send({ type: 'getLeaderboard' });
   }, [send]);
 
-  if (phase === 'home') {
+  if (phase === 'home')
     return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} leaderboard={leaderboard} connected={connected} error={error} />;
-  }
-  if (phase === 'lobby') {
+
+  if (phase === 'lobby')
     return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} onStartGame={handleStartGame} onBack={handleHome} />;
-  }
-  if (phase === 'countdown' || phase === 'playing') {
-    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} onMouseMove={handleMouseMove} />;
-  }
-  if (phase === 'results') {
+
+  if (phase === 'countdown' || phase === 'playing')
+    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} onMouseMove={handleMouseMove} />;
+
+  if (phase === 'results')
     return <ResultsScreen players={results} leaderboard={leaderboard} onPlayAgain={handlePlayAgain} onHome={handleHome} />;
-  }
+
   return null;
 };
 
