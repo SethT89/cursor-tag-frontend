@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { LeaderboardEntry } from '../game/gameTypes';
+import React, { useState } from 'react';
 
 interface HomeScreenProps {
   onCreateGame: (name: string) => void;
   onJoinGame: (name: string, roomCode: string) => void;
-  leaderboard: LeaderboardEntry[];
   connected: boolean;
   error?: string;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, leaderboard, connected, error }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, connected, error }) => {
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [mode, setMode] = useState<'create' | 'join'>('create');
@@ -52,173 +50,132 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, leade
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: '40px', alignItems: 'flex-start', maxWidth: '900px', width: '100%' }}>
-        {/* Main card */}
-        <div style={{
-          flex: 1,
-          background: 'rgba(255,255,255,0.05)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '24px',
-          padding: '48px',
-        }}>
-          {/* Logo */}
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏷️</div>
-            <h1 style={{
-              fontSize: '48px',
-              fontWeight: '900',
-              margin: 0,
-              background: 'linear-gradient(135deg, #FF4B6E, #4B9FFF, #4BFFA5)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              letterSpacing: '-2px',
-            }}>
-              CURSOR TAG
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,0.5)', margin: '8px 0 0', fontSize: '15px' }}>
-              Real-time multiplayer cursor mayhem
-            </p>
-          </div>
-
-          {/* Connection status */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            justifyContent: 'center',
-            marginBottom: '32px',
+      {/* Main card */}
+      <div style={{
+        width: '100%',
+        maxWidth: '480px',
+        background: 'rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '24px',
+        padding: '48px',
+      }}>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏷️</div>
+          <h1 style={{
+            fontSize: '48px',
+            fontWeight: '900',
+            margin: 0,
+            background: 'linear-gradient(135deg, #FF4B6E, #4B9FFF, #4BFFA5)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            letterSpacing: '-2px',
           }}>
-            <div style={{
-              width: '8px', height: '8px', borderRadius: '50%',
-              background: connected ? '#4BFFA5' : '#FF4B6E',
-              boxShadow: connected ? '0 0 8px #4BFFA5' : '0 0 8px #FF4B6E',
-            }} />
-            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
-              {connected ? 'Connected to server' : 'Connecting...'}
-            </span>
-          </div>
-
-          {error && (
-            <div style={{
-              background: 'rgba(255,75,110,0.15)',
-              border: '1px solid rgba(255,75,110,0.4)',
-              borderRadius: '12px',
-              padding: '12px 16px',
-              marginBottom: '24px',
-              color: '#FF4B6E',
-              fontSize: '14px',
-              textAlign: 'center',
-            }}>
-              {error}
-            </div>
-          )}
-
-          {/* Mode toggle */}
-          <div style={{
-            display: 'flex',
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '12px',
-            padding: '4px',
-            marginBottom: '24px',
-          }}>
-            {(['create', 'join'] as const).map(m => (
-              <button key={m} onClick={() => setMode(m)} style={{
-                flex: 1,
-                padding: '10px',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
-                transition: 'all 0.2s',
-                background: mode === m ? 'rgba(255,255,255,0.12)' : 'transparent',
-                color: mode === m ? 'white' : 'rgba(255,255,255,0.4)',
-              }}>
-                {m === 'create' ? '✨ Create Room' : '🔗 Join Room'}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your name"
-              maxLength={20}
-              style={inputStyle}
-            />
-            {mode === 'join' && (
-              <input
-                value={roomCode}
-                onChange={e => setRoomCode(e.target.value.toUpperCase())}
-                placeholder="Room code (e.g. AB12C)"
-                maxLength={5}
-                style={{ ...inputStyle, letterSpacing: '4px', textTransform: 'uppercase' }}
-              />
-            )}
-            <button
-              type="submit"
-              disabled={!connected || !name.trim() || (mode === 'join' && !roomCode.trim())}
-              style={{
-                width: '100%',
-                padding: '16px',
-                border: 'none',
-                borderRadius: '14px',
-                background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)',
-                color: 'white',
-                fontWeight: '700',
-                fontSize: '16px',
-                cursor: 'pointer',
-                opacity: (!connected || !name.trim()) ? 0.4 : 1,
-                transition: 'all 0.2s',
-                marginTop: '8px',
-              }}
-            >
-              {mode === 'create' ? '🚀 Create Game' : '🎮 Join Game'}
-            </button>
-          </form>
+            CURSOR TAG
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.5)', margin: '8px 0 0', fontSize: '15px' }}>
+            Real-time multiplayer cursor mayhem
+          </p>
         </div>
 
-        {/* Leaderboard */}
-        {leaderboard.length > 0 && (
+        {/* Connection status */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          justifyContent: 'center',
+          marginBottom: '32px',
+        }}>
           <div style={{
-            width: '280px',
-            background: 'rgba(255,255,255,0.04)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '24px',
-            padding: '32px',
+            width: '8px', height: '8px', borderRadius: '50%',
+            background: connected ? '#4BFFA5' : '#FF4B6E',
+            boxShadow: connected ? '0 0 8px #4BFFA5' : '0 0 8px #FF4B6E',
+          }} />
+          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
+            {connected ? 'Connected to server' : 'Connecting...'}
+          </span>
+        </div>
+
+        {error && (
+          <div style={{
+            background: 'rgba(255,75,110,0.15)',
+            border: '1px solid rgba(255,75,110,0.4)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            marginBottom: '24px',
+            color: '#FF4B6E',
+            fontSize: '14px',
+            textAlign: 'center',
           }}>
-            <h3 style={{ margin: '0 0 24px', fontSize: '16px', fontWeight: '700', color: '#FFB74B' }}>
-              🏆 Hall of Fame
-            </h3>
-            {leaderboard.map((entry, i) => (
-              <div key={i} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '10px 0',
-                borderBottom: i < leaderboard.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-              }}>
-                <span style={{ fontSize: '16px', width: '24px', textAlign: 'center' }}>
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: '600', fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {entry.name}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                    {entry.gamesPlayed} game{entry.gamesPlayed !== 1 ? 's' : ''} · {entry.wins}W
-                  </div>
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: '700', color: '#4BFFA5' }}>
-                  {entry.bestScore}
-                </div>
-              </div>
-            ))}
+            {error}
           </div>
         )}
+
+        {/* Mode toggle */}
+        <div style={{
+          display: 'flex',
+          background: 'rgba(255,255,255,0.05)',
+          borderRadius: '12px',
+          padding: '4px',
+          marginBottom: '24px',
+        }}>
+          {(['create', 'join'] as const).map(m => (
+            <button key={m} onClick={() => setMode(m)} style={{
+              flex: 1,
+              padding: '10px',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '14px',
+              transition: 'all 0.2s',
+              background: mode === m ? 'rgba(255,255,255,0.12)' : 'transparent',
+              color: mode === m ? 'white' : 'rgba(255,255,255,0.4)',
+            }}>
+              {m === 'create' ? '✨ Create Room' : '🔗 Join Room'}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Your name"
+            maxLength={20}
+            style={inputStyle}
+          />
+          {mode === 'join' && (
+            <input
+              value={roomCode}
+              onChange={e => setRoomCode(e.target.value.toUpperCase())}
+              placeholder="Room code (e.g. AB12C)"
+              maxLength={5}
+              style={{ ...inputStyle, letterSpacing: '4px', textTransform: 'uppercase' }}
+            />
+          )}
+          <button
+            type="submit"
+            disabled={!connected || !name.trim() || (mode === 'join' && !roomCode.trim())}
+            style={{
+              width: '100%',
+              padding: '16px',
+              border: 'none',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)',
+              color: 'white',
+              fontWeight: '700',
+              fontSize: '16px',
+              cursor: 'pointer',
+              opacity: (!connected || !name.trim()) ? 0.4 : 1,
+              transition: 'all 0.2s',
+              marginTop: '8px',
+            }}
+          >
+            {mode === 'create' ? '🚀 Create Game' : '🎮 Join Game'}
+          </button>
+        </form>
       </div>
 
       <style>{`
