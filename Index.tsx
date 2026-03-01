@@ -106,6 +106,14 @@ const Index = () => {
 
   const handleStartGame = useCallback(() => { send({ type: 'startGame' }); }, [send]);
 
+  const handleAddBot = useCallback((difficulty: 'easy' | 'medium' | 'hard') => {
+    send({ type: 'addBot', difficulty });
+  }, [send]);
+
+  const handleRemoveBot = useCallback((botId: string) => {
+    send({ type: 'removeBot', botId });
+  }, [send]);
+
   const handlePlayAgain = useCallback(() => {
     send({ type: 'playAgain' });
     setPhase('lobby');
@@ -127,7 +135,7 @@ const Index = () => {
     return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} leaderboard={leaderboard} connected={connected} error={error} />;
 
   if (phase === 'lobby')
-    return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} onStartGame={handleStartGame} onBack={handleHome} />;
+    return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} />;
 
   if (phase === 'countdown' || phase === 'playing')
     return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} onMouseMove={handleMouseMove} />;
