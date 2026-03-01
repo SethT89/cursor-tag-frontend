@@ -42,27 +42,22 @@ const EmailSignup: React.FC = () => {
   return (
     <div style={{
       background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '16px', padding: '20px 24px',
+      borderRadius: '16px', padding: '16px',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <div style={{ marginBottom: '14px' }}>
-        <div style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>
-          🎮 New games drop every week
-        </div>
-        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>
-          Join PlayTabRecess — be first to know when the next one is live.
-        </div>
-      </div>
       <iframe
         src="https://subscribe-forms.beehiiv.com/d3e61ef5-5de4-4793-9393-2a5dd8788019"
         frameBorder={0}
         scrolling="no"
         style={{
           width: '100%',
+          maxWidth: '500px',
           height: '164px',
           background: 'transparent',
           border: 'none',
           display: 'block',
           borderRadius: '12px',
+          margin: '0 auto',
         }}
       />
     </div>
