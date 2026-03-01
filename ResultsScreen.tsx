@@ -131,9 +131,9 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0f0f1a 0%, #1a0f2e 50%, #0f1a2e 100%)',
       fontFamily: "'Inter', 'Segoe UI', sans-serif",
-      color: 'white', padding: '20px', overflowY: 'auto',
+      color: 'white',
     }}>
-      <div style={{ width: '100%', maxWidth: '700px' }}>
+      <div style={{ width: '100%', maxWidth: '700px', margin: '0 auto', padding: '40px 20px 60px' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -289,6 +289,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
       </div>
 
       <style>{`
+        html, body, #root { height: auto !important; overflow: visible !important; }
         @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
       `}</style>
