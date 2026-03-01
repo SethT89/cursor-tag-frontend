@@ -16,6 +16,7 @@ interface GameArenaProps {
   timeLeft: number;
   countdown?: number | null;
   liveScores?: LiveScore[];
+  tagDistance?: number;
   onMouseMove: (x: number, y: number) => void;
 }
 
@@ -25,7 +26,7 @@ interface SmoothedPos {
 }
 
 const GameArena: React.FC<GameArenaProps> = ({
-  players, localPlayerId, itPlayerId, timeLeft, countdown, liveScores = [], onMouseMove,
+  players, localPlayerId, itPlayerId, timeLeft, countdown, liveScores = [], tagDistance = 12, onMouseMove,
 }) => {
   const arenaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,14 +34,15 @@ const GameArena: React.FC<GameArenaProps> = ({
   const animFrameRef = useRef<number>();
   const localPosRef = useRef({ x: 50, y: 50 });
   const playersRef = useRef<Player[]>(players);
+  const tagDistanceRef = useRef(tagDistance);
   const [renderTick, setRenderTick] = useState(0);
-  // Track previous rank for animation
   const prevRanksRef = useRef<Map<string, number>>(new Map());
 
   const localPlayer = players.find(p => p.id === localPlayerId);
   const itPlayer = players.find(p => p.id === itPlayerId);
 
   useEffect(() => { playersRef.current = players; }, [players]);
+  useEffect(() => { tagDistanceRef.current = tagDistance; }, [tagDistance]);
 
   // Update smooth targets
   useEffect(() => {
@@ -58,7 +60,7 @@ const GameArena: React.FC<GameArenaProps> = ({
     smoothedRef.current.forEach((_, id) => { if (!ids.has(id)) smoothedRef.current.delete(id); });
   }, [players, localPlayerId]);
 
-  // Canvas loop for local cursor
+  // Canvas loop — local cursor + tag zone ring
   useEffect(() => {
     const canvas = canvasRef.current;
     const arena = arenaRef.current;
@@ -73,23 +75,28 @@ const GameArena: React.FC<GameArenaProps> = ({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const player = playersRef.current.find(p => p.id === localPlayerId);
-      if (!player) return;
+      if (!player) { animFrameRef.current = requestAnimationFrame(draw); return; }
 
       const px = (localPosRef.current.x / 100) * canvas.width;
       const py = (localPosRef.current.y / 100) * canvas.height;
       const { color, isIt, immune } = player;
 
+      // Tag zone ring — accurately sized to match server hit distance
       if (isIt) {
-        const pulse = (Math.sin(Date.now() / 300) + 1) / 2;
+        const tagRingRadius = (tagDistanceRef.current / 100) * canvas.width;
+        const pulse = (Math.sin(Date.now() / 400) + 1) / 2;
         ctx.beginPath();
-        ctx.arc(px + 10, py + 14, 22 + pulse * 8, 0, Math.PI * 2);
+        ctx.arc(px + 10, py + 14, tagRingRadius, 0, Math.PI * 2);
         ctx.strokeStyle = color;
-        ctx.globalAlpha = 0.5 - pulse * 0.3;
+        ctx.globalAlpha = 0.2 + pulse * 0.2;
         ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
         ctx.stroke();
+        ctx.setLineDash([]);
         ctx.globalAlpha = 1;
       }
 
+      // Immune dashed ring
       if (immune) {
         ctx.beginPath();
         ctx.arc(px + 10, py + 14, 20, 0, Math.PI * 2);
@@ -101,6 +108,7 @@ const GameArena: React.FC<GameArenaProps> = ({
         ctx.globalAlpha = 1;
       }
 
+      // Cursor arrow
       ctx.save();
       ctx.translate(px, py);
       const cursorPath = new Path2D('M0 0 L0 28 L7 21 L12 32 L16 30 L11 19 L20 19 Z');
@@ -114,8 +122,13 @@ const GameArena: React.FC<GameArenaProps> = ({
       ctx.stroke(cursorPath);
       ctx.restore();
 
-      if (isIt) ctx.fillText('👑', px + 2, py - 6);
+      // Crown
+      if (isIt) {
+        ctx.font = '16px serif';
+        ctx.fillText('👑', px + 2, py - 6);
+      }
 
+      // Name tag
       const tag = player.name + (isIt ? ' 🏷️' : '');
       ctx.font = '600 12px Inter, sans-serif';
       const tw = ctx.measureText(tag).width;
@@ -137,7 +150,7 @@ const GameArena: React.FC<GameArenaProps> = ({
     return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
   }, [localPlayerId]);
 
-  // Smooth remote cursors
+  // Smooth remote cursors at 60fps
   useEffect(() => {
     const LERP = 0.25;
     let rafId: number;
@@ -203,7 +216,7 @@ const GameArena: React.FC<GameArenaProps> = ({
         pointerEvents: 'none', zIndex: 40,
       }} />
 
-      {/* Countdown */}
+      {/* Countdown overlay */}
       {countdown != null && countdown > 0 && (
         <div style={{
           position: 'absolute', inset: 0, display: 'flex',
@@ -265,16 +278,12 @@ const GameArena: React.FC<GameArenaProps> = ({
         </div>
       )}
 
-      {/* ── LIVE SCOREBOARD top right ── */}
+      {/* Live scoreboard top right */}
       {liveScores.length > 0 && (
-        <div style={{
-          position: 'absolute', top: '20px', right: '20px',
-          zIndex: 50, width: '200px',
-        }}>
+        <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 50, width: '200px' }}>
           <div style={{
             background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '16px', overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflow: 'hidden',
           }}>
             <div style={{
               padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -288,7 +297,6 @@ const GameArena: React.FC<GameArenaProps> = ({
               const prevRank = prevRanksRef.current.get(s.id);
               const moved = prevRank !== undefined && prevRank !== i;
               prevRanksRef.current.set(s.id, i);
-
               return (
                 <div key={s.id} style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
@@ -300,8 +308,7 @@ const GameArena: React.FC<GameArenaProps> = ({
                 }}>
                   <span style={{
                     fontSize: '13px', width: '18px', textAlign: 'center',
-                    color: i === 0 ? '#FFB74B' : 'rgba(255,255,255,0.3)',
-                    fontWeight: '700',
+                    color: i === 0 ? '#FFB74B' : 'rgba(255,255,255,0.3)', fontWeight: '700',
                   }}>
                     {i === 0 ? '👑' : i + 1}
                   </span>
@@ -315,7 +322,7 @@ const GameArena: React.FC<GameArenaProps> = ({
                     color: s.isIt ? '#FF4B6E' : isLocal ? 'white' : 'rgba(255,255,255,0.7)',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
-                    {s.name}
+                    {s.name}{s.isBot ? ' 🤖' : ''}
                   </span>
                   {s.isIt && <span style={{ fontSize: '10px' }}>🏷️</span>}
                   <span style={{
@@ -332,13 +339,14 @@ const GameArena: React.FC<GameArenaProps> = ({
         </div>
       )}
 
-      {/* YOU ARE IT */}
+      {/* YOU ARE IT banner */}
       {localPlayer?.isIt && (
         <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
           <div style={{
             background: 'rgba(255,75,110,0.9)', borderRadius: '16px',
             padding: '14px 28px', fontSize: '20px', fontWeight: '900',
             color: 'white', animation: 'glow 1s ease-in-out infinite alternate',
+            whiteSpace: 'nowrap',
           }}>
             ⚡ YOU ARE IT — TAG SOMEONE! ⚡
           </div>
@@ -348,7 +356,7 @@ const GameArena: React.FC<GameArenaProps> = ({
       {/* Remote cursors */}
       {players.filter(p => p.id !== localPlayerId).map(p => {
         const pos = getPos(p);
-        return <RemoteCursor key={p.id} player={p} x={pos.x} y={pos.y} />;
+        return <RemoteCursor key={p.id} player={p} x={pos.x} y={pos.y} tagDistance={tagDistance} />;
       })}
 
       <style>{`
@@ -366,9 +374,9 @@ const GameArena: React.FC<GameArenaProps> = ({
           0% { transform: translateY(-8px); opacity: 0.5; }
           100% { transform: translateY(0); opacity: 1; }
         }
-        @keyframes itRing {
-          0% { transform: scale(0.8); opacity: 0.8; }
-          100% { transform: scale(1.4); opacity: 0; }
+        @keyframes tagZonePulse {
+          0%,100% { opacity: 0.3; }
+          50% { opacity: 0.55; }
         }
         @keyframes bounce {
           from { transform: translateY(0); }
@@ -382,29 +390,29 @@ const GameArena: React.FC<GameArenaProps> = ({
 
 const CURSOR_ARROW = `M0 0 L0 28 L7 21 L12 32 L16 30 L11 19 L20 19 Z`;
 
-const RemoteCursor: React.FC<{ player: Player; x: number; y: number }> = ({ player, x, y }) => {
+const RemoteCursor: React.FC<{ player: Player; x: number; y: number; tagDistance: number }> = ({ player, x, y, tagDistance }) => {
   const { color, name, isIt, immune } = player;
   return (
     <div style={{
       position: 'absolute', left: `${x}%`, top: `${y}%`,
       transform: 'translate(-2px, -2px)', pointerEvents: 'none', zIndex: 20,
     }}>
+      {/* Accurate tag zone ring — sized to match TAG_DISTANCE_PCT */}
       {isIt && (
-        <>
-          <div style={{
-            position: 'absolute', left: '-20px', top: '-20px',
-            width: '60px', height: '60px', borderRadius: '50%',
-            border: `2px solid ${color}`,
-            animation: 'itRing 1s ease-in-out infinite', opacity: 0.6,
-          }} />
-          <div style={{
-            position: 'absolute', left: '-30px', top: '-30px',
-            width: '80px', height: '80px', borderRadius: '50%',
-            border: `1px solid ${color}`,
-            animation: 'itRing 1s ease-in-out infinite 0.2s', opacity: 0.3,
-          }} />
-        </>
+        <div style={{
+          position: 'absolute',
+          left: `calc(-${tagDistance}vw + 10px)`,
+          top: `calc(-${tagDistance}vw + 14px)`,
+          width: `${tagDistance * 2}vw`,
+          height: `${tagDistance * 2}vw`,
+          borderRadius: '50%',
+          border: `2px dashed ${color}`,
+          opacity: 0.35,
+          pointerEvents: 'none',
+          animation: 'tagZonePulse 2s ease-in-out infinite',
+        }} />
       )}
+
       {immune && (
         <div style={{
           position: 'absolute', left: '-14px', top: '-14px',
@@ -413,18 +421,21 @@ const RemoteCursor: React.FC<{ player: Player; x: number; y: number }> = ({ play
           animation: 'immuneShimmer 0.4s ease-in-out infinite',
         }} />
       )}
+
       <svg width="22" height="30" viewBox="0 0 24 32" fill="none" style={{
         filter: isIt ? `drop-shadow(0 0 6px ${color})` : undefined,
         opacity: immune ? 0.6 : 1,
       }}>
         <path d={CURSOR_ARROW} fill={color} stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
       </svg>
+
       {isIt && (
         <div style={{
           position: 'absolute', top: '-22px', left: '2px',
           fontSize: '16px', animation: 'bounce 0.5s ease-in-out infinite alternate',
         }}>👑</div>
       )}
+
       <div style={{
         position: 'absolute', left: '26px', top: '0px',
         background: isIt ? color : 'rgba(0,0,0,0.75)',
@@ -434,7 +445,7 @@ const RemoteCursor: React.FC<{ player: Player; x: number; y: number }> = ({ play
         color: isIt ? 'white' : 'rgba(255,255,255,0.9)',
         whiteSpace: 'nowrap',
       }}>
-        {name}{isIt && ' 🏷️'}
+        {name}{isIt ? ' 🏷️' : ''}{player.isBot ? ' 🤖' : ''}
       </div>
     </div>
   );
