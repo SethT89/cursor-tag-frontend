@@ -42,8 +42,7 @@ const EmailSignup: React.FC = () => {
   return (
     <div style={{
       background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '16px', padding: '16px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      borderRadius: '16px', overflow: 'hidden',
     }}>
       <iframe
         src="https://subscribe-forms.beehiiv.com/d3e61ef5-5de4-4793-9393-2a5dd8788019"
@@ -51,13 +50,10 @@ const EmailSignup: React.FC = () => {
         scrolling="no"
         style={{
           width: '100%',
-          maxWidth: '500px',
-          height: '164px',
+          height: '220px',
           background: 'transparent',
           border: 'none',
           display: 'block',
-          borderRadius: '12px',
-          margin: '0 auto',
         }}
       />
     </div>
