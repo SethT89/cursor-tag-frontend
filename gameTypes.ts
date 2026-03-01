@@ -62,7 +62,7 @@ export type ServerMessage =
   | { type: 'playerJoined'; players: Player[] }
   | { type: 'playerLeft'; players: Player[] }
   | { type: 'countdown'; count: number }
-  | { type: 'gameStarted'; players: Player[]; itPlayerId: string; duration: number }
+  | { type: 'gameStarted'; players: Player[]; itPlayerId: string; duration: number; tagDistance: number }
   | { type: 'gameState'; players: Player[]; itPlayerId: string; timeLeft: number; liveScores: LiveScore[] }
   | { type: 'tagged'; newItId: string; taggerId: string }
   | { type: 'gameEnded'; players: Player[]; leaderboard: LeaderboardEntry[] }
