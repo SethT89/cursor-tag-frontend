@@ -1,24 +1,31 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Player } from './gameTypes';
 
+interface LiveScore {
+  id: string;
+  name: string;
+  color: string;
+  score: number;
+  isIt: boolean;
+}
+
 interface GameArenaProps {
   players: Player[];
   localPlayerId: string;
   itPlayerId: string;
   timeLeft: number;
   countdown?: number | null;
+  liveScores?: LiveScore[];
   onMouseMove: (x: number, y: number) => void;
 }
 
 interface SmoothedPos {
-  x: number;
-  y: number;
-  targetX: number;
-  targetY: number;
+  x: number; y: number;
+  targetX: number; targetY: number;
 }
 
 const GameArena: React.FC<GameArenaProps> = ({
-  players, localPlayerId, itPlayerId, timeLeft, countdown, onMouseMove,
+  players, localPlayerId, itPlayerId, timeLeft, countdown, liveScores = [], onMouseMove,
 }) => {
   const arenaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -27,16 +34,15 @@ const GameArena: React.FC<GameArenaProps> = ({
   const localPosRef = useRef({ x: 50, y: 50 });
   const playersRef = useRef<Player[]>(players);
   const [renderTick, setRenderTick] = useState(0);
+  // Track previous rank for animation
+  const prevRanksRef = useRef<Map<string, number>>(new Map());
 
   const localPlayer = players.find(p => p.id === localPlayerId);
   const itPlayer = players.find(p => p.id === itPlayerId);
 
-  // Keep playersRef in sync
-  useEffect(() => {
-    playersRef.current = players;
-  }, [players]);
+  useEffect(() => { playersRef.current = players; }, [players]);
 
-  // Update smoothed targets when server sends positions
+  // Update smooth targets
   useEffect(() => {
     players.forEach(p => {
       if (p.id === localPlayerId) return;
@@ -45,24 +51,20 @@ const GameArena: React.FC<GameArenaProps> = ({
         existing.targetX = p.x;
         existing.targetY = p.y;
       } else {
-        smoothedRef.current.set(p.id, {
-          x: p.x, y: p.y, targetX: p.x, targetY: p.y,
-        });
+        smoothedRef.current.set(p.id, { x: p.x, y: p.y, targetX: p.x, targetY: p.y });
       }
     });
     const ids = new Set(players.map(p => p.id));
-    smoothedRef.current.forEach((_, id) => {
-      if (!ids.has(id)) smoothedRef.current.delete(id);
-    });
+    smoothedRef.current.forEach((_, id) => { if (!ids.has(id)) smoothedRef.current.delete(id); });
   }, [players, localPlayerId]);
 
-  // Draw local cursor on canvas — runs at 60fps, never touched by React
+  // Canvas loop for local cursor
   useEffect(() => {
     const canvas = canvasRef.current;
     const arena = arenaRef.current;
     if (!canvas || !arena) return;
 
-    const drawCursor = () => {
+    const draw = () => {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       const rect = arena.getBoundingClientRect();
@@ -75,13 +77,10 @@ const GameArena: React.FC<GameArenaProps> = ({
 
       const px = (localPosRef.current.x / 100) * canvas.width;
       const py = (localPosRef.current.y / 100) * canvas.height;
-      const color = player.color;
-      const isIt = player.isIt;
+      const { color, isIt, immune } = player;
 
-      // IT pulsing rings
       if (isIt) {
-        const time = Date.now() / 1000;
-        const pulse = (Math.sin(time * 3) + 1) / 2;
+        const pulse = (Math.sin(Date.now() / 300) + 1) / 2;
         ctx.beginPath();
         ctx.arc(px + 10, py + 14, 22 + pulse * 8, 0, Math.PI * 2);
         ctx.strokeStyle = color;
@@ -91,59 +90,54 @@ const GameArena: React.FC<GameArenaProps> = ({
         ctx.globalAlpha = 1;
       }
 
-      // Cursor arrow shape
+      if (immune) {
+        ctx.beginPath();
+        ctx.arc(px + 10, py + 14, 20, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+      }
+
       ctx.save();
       ctx.translate(px, py);
-      const path = new Path2D('M0 0 L0 28 L7 21 L12 32 L16 30 L11 19 L20 19 Z');
+      const cursorPath = new Path2D('M0 0 L0 28 L7 21 L12 32 L16 30 L11 19 L20 19 Z');
       ctx.fillStyle = color;
       ctx.shadowColor = isIt ? color : 'transparent';
       ctx.shadowBlur = isIt ? 10 : 0;
-      ctx.fill(path);
+      ctx.fill(cursorPath);
       ctx.strokeStyle = 'white';
       ctx.lineWidth = 1.5;
       ctx.lineJoin = 'round';
-      ctx.stroke(path);
+      ctx.stroke(cursorPath);
       ctx.restore();
 
-      // IT crown
-      if (isIt) {
-        ctx.font = '16px serif';
-        ctx.fillText('👑', px + 2, py - 6);
-      }
+      if (isIt) ctx.fillText('👑', px + 2, py - 6);
 
-      // Name tag
       const tag = player.name + (isIt ? ' 🏷️' : '');
       ctx.font = '600 12px Inter, sans-serif';
-      const textWidth = ctx.measureText(tag).width;
-      const tagX = px + 26;
-      const tagY = py;
-      const padding = 6;
-
+      const tw = ctx.measureText(tag).width;
+      const pad = 6;
       ctx.fillStyle = isIt ? color : 'rgba(0,0,0,0.75)';
       ctx.beginPath();
-      ctx.roundRect(tagX, tagY, textWidth + padding * 2, 20, 4);
+      (ctx as any).roundRect(px + 26, py, tw + pad * 2, 20, 4);
       ctx.fill();
-
       ctx.strokeStyle = isIt ? 'white' : 'rgba(255,255,255,0.15)';
       ctx.lineWidth = 1;
       ctx.stroke();
-
       ctx.fillStyle = 'white';
-      ctx.fillText(tag, tagX + padding, tagY + 14);
+      ctx.fillText(tag, px + 26 + pad, py + 14);
+
+      animFrameRef.current = requestAnimationFrame(draw);
     };
 
-    const loop = () => {
-      drawCursor();
-      animFrameRef.current = requestAnimationFrame(loop);
-    };
-    animFrameRef.current = requestAnimationFrame(loop);
-
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
+    animFrameRef.current = requestAnimationFrame(draw);
+    return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
   }, [localPlayerId]);
 
-  // Smooth other players at 60fps, trigger React re-render for them
+  // Smooth remote cursors
   useEffect(() => {
     const LERP = 0.25;
     let rafId: number;
@@ -175,14 +169,14 @@ const GameArena: React.FC<GameArenaProps> = ({
     onMouseMove(x, y);
   }, [onMouseMove]);
 
+  const getPos = (p: Player) => {
+    const s = smoothedRef.current.get(p.id);
+    return s ? { x: s.x, y: s.y } : { x: p.x, y: p.y };
+  };
+
   const seconds = Math.ceil(timeLeft / 1000);
   const isLow = seconds <= 10;
   const pct = timeLeft / 60000;
-
-  const getPos = (p: Player) => {
-    const smoothed = smoothedRef.current.get(p.id);
-    return smoothed ? { x: smoothed.x, y: smoothed.y } : { x: p.x, y: p.y };
-  };
 
   return (
     <div style={{
@@ -203,10 +197,9 @@ const GameArena: React.FC<GameArenaProps> = ({
         <rect width="100%" height="100%" fill="url(#grid)"/>
       </svg>
 
-      {/* Canvas layer for local cursor — sits on top of everything */}
+      {/* Canvas — local cursor */}
       <canvas ref={canvasRef} style={{
-        position: 'absolute', inset: 0,
-        width: '100%', height: '100%',
+        position: 'absolute', inset: 0, width: '100%', height: '100%',
         pointerEvents: 'none', zIndex: 40,
       }} />
 
@@ -223,9 +216,7 @@ const GameArena: React.FC<GameArenaProps> = ({
               background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               animation: 'popIn 0.3s ease-out',
-            }}>
-              {countdown}
-            </div>
+            }}>{countdown}</div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '20px', marginTop: '16px' }}>
               Get ready!
             </div>
@@ -234,10 +225,7 @@ const GameArena: React.FC<GameArenaProps> = ({
       )}
 
       {/* Timer */}
-      <div style={{
-        position: 'absolute', top: '20px', left: '50%',
-        transform: 'translateX(-50%)', zIndex: 50,
-      }}>
+      <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
         <div style={{
           background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)',
           border: `1px solid ${isLow ? 'rgba(255,75,110,0.5)' : 'rgba(255,255,255,0.1)'}`,
@@ -264,16 +252,11 @@ const GameArena: React.FC<GameArenaProps> = ({
 
       {/* IT indicator */}
       {itPlayer && (
-        <div style={{
-          position: 'absolute', top: '80px', left: '50%',
-          transform: 'translateX(-50%)', zIndex: 50,
-        }}>
+        <div style={{ position: 'absolute', top: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
           <div style={{
-            background: 'rgba(255,75,110,0.15)',
-            border: '1px solid rgba(255,75,110,0.4)',
-            borderRadius: '12px', padding: '6px 16px',
-            fontSize: '13px', color: '#FF4B6E', fontWeight: '600',
-            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(255,75,110,0.15)', border: '1px solid rgba(255,75,110,0.4)',
+            borderRadius: '12px', padding: '6px 16px', fontSize: '13px',
+            color: '#FF4B6E', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px',
           }}>
             <span style={{ animation: 'spin 2s linear infinite', display: 'inline-block' }}>⚡</span>
             <span style={{ color: itPlayer.color, fontWeight: '700' }}>{itPlayer.name}</span>
@@ -282,42 +265,76 @@ const GameArena: React.FC<GameArenaProps> = ({
         </div>
       )}
 
-      {/* Player sidebar */}
-      <div style={{
-        position: 'absolute', top: '20px', right: '20px',
-        zIndex: 50, display: 'flex', flexDirection: 'column', gap: '6px',
-      }}>
-        {players.map(p => (
-          <div key={p.id} style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '6px 12px', background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(8px)', borderRadius: '10px',
-            border: `1px solid ${p.isIt ? 'rgba(255,75,110,0.5)' : 'rgba(255,255,255,0.06)'}`,
-            opacity: p.immune ? 0.5 : 1,
+      {/* ── LIVE SCOREBOARD top right ── */}
+      {liveScores.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '20px', right: '20px',
+          zIndex: 50, width: '200px',
+        }}>
+          <div style={{
+            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px', overflow: 'hidden',
           }}>
             <div style={{
-              width: '8px', height: '8px', borderRadius: '50%', background: p.color,
-              boxShadow: p.isIt ? `0 0 6px ${p.color}` : undefined,
-            }} />
-            <span style={{
-              fontSize: '12px',
-              fontWeight: p.id === localPlayerId ? '700' : '400',
-              color: p.isIt ? '#FF4B6E' : p.id === localPlayerId ? 'white' : 'rgba(255,255,255,0.6)',
+              padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+              fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.4)',
+              letterSpacing: '1px', textTransform: 'uppercase',
             }}>
-              {p.name}
-            </span>
-            {p.isIt && <span style={{ fontSize: '12px' }}>🏷️</span>}
-            {p.immune && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>🛡️</span>}
+              🏆 Live Scores
+            </div>
+            {liveScores.map((s, i) => {
+              const isLocal = s.id === localPlayerId;
+              const prevRank = prevRanksRef.current.get(s.id);
+              const moved = prevRank !== undefined && prevRank !== i;
+              prevRanksRef.current.set(s.id, i);
+
+              return (
+                <div key={s.id} style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 14px',
+                  background: isLocal ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  borderBottom: i < liveScores.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                  transition: 'all 0.4s ease',
+                  animation: moved ? 'rankMove 0.4s ease-out' : undefined,
+                }}>
+                  <span style={{
+                    fontSize: '13px', width: '18px', textAlign: 'center',
+                    color: i === 0 ? '#FFB74B' : 'rgba(255,255,255,0.3)',
+                    fontWeight: '700',
+                  }}>
+                    {i === 0 ? '👑' : i + 1}
+                  </span>
+                  <div style={{
+                    width: '8px', height: '8px', borderRadius: '50%',
+                    background: s.color, flexShrink: 0,
+                    boxShadow: s.isIt ? `0 0 6px ${s.color}` : undefined,
+                  }} />
+                  <span style={{
+                    flex: 1, fontSize: '12px', fontWeight: isLocal ? '700' : '500',
+                    color: s.isIt ? '#FF4B6E' : isLocal ? 'white' : 'rgba(255,255,255,0.7)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {s.name}
+                  </span>
+                  {s.isIt && <span style={{ fontSize: '10px' }}>🏷️</span>}
+                  <span style={{
+                    fontSize: '12px', fontWeight: '700',
+                    color: i === 0 ? '#FFB74B' : 'rgba(255,255,255,0.6)',
+                    minWidth: '32px', textAlign: 'right',
+                  }}>
+                    {s.score}
+                  </span>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* YOU ARE IT */}
       {localPlayer?.isIt && (
-        <div style={{
-          position: 'absolute', bottom: '40px', left: '50%',
-          transform: 'translateX(-50%)', zIndex: 50,
-        }}>
+        <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
           <div style={{
             background: 'rgba(255,75,110,0.9)', borderRadius: '16px',
             padding: '14px 28px', fontSize: '20px', fontWeight: '900',
@@ -328,13 +345,11 @@ const GameArena: React.FC<GameArenaProps> = ({
         </div>
       )}
 
-      {/* Remote player cursors (React-rendered, smoothed) */}
-      {players
-        .filter(p => p.id !== localPlayerId)
-        .map(p => {
-          const pos = getPos(p);
-          return <RemoteCursor key={p.id} player={p} x={pos.x} y={pos.y} />;
-        })}
+      {/* Remote cursors */}
+      {players.filter(p => p.id !== localPlayerId).map(p => {
+        const pos = getPos(p);
+        return <RemoteCursor key={p.id} player={p} x={pos.x} y={pos.y} />;
+      })}
 
       <style>{`
         @keyframes popIn {
@@ -347,7 +362,10 @@ const GameArena: React.FC<GameArenaProps> = ({
           from { box-shadow: 0 0 20px rgba(255,75,110,0.4); }
           to { box-shadow: 0 0 60px rgba(255,75,110,0.8); }
         }
-        @keyframes immuneShimmer { 0%,100% { opacity:0.4; } 50% { opacity:0.7; } }
+        @keyframes rankMove {
+          0% { transform: translateY(-8px); opacity: 0.5; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
         @keyframes itRing {
           0% { transform: scale(0.8); opacity: 0.8; }
           100% { transform: scale(1.4); opacity: 0; }
@@ -356,6 +374,7 @@ const GameArena: React.FC<GameArenaProps> = ({
           from { transform: translateY(0); }
           to { transform: translateY(-4px); }
         }
+        @keyframes immuneShimmer { 0%,100% { opacity:0.4; } 50% { opacity:0.7; } }
       `}</style>
     </div>
   );
@@ -368,8 +387,7 @@ const RemoteCursor: React.FC<{ player: Player; x: number; y: number }> = ({ play
   return (
     <div style={{
       position: 'absolute', left: `${x}%`, top: `${y}%`,
-      transform: 'translate(-2px, -2px)',
-      pointerEvents: 'none', zIndex: 20,
+      transform: 'translate(-2px, -2px)', pointerEvents: 'none', zIndex: 20,
     }}>
       {isIt && (
         <>
