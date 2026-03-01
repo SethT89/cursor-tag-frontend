@@ -208,8 +208,9 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
             </div>
 
             <button onClick={() => onAddBot(selectedDifficulty)} style={{
-              width: '100%', padding: '12px', borderRadius: '10px', border: 'none',
-              background: 'rgba(75,159,255,0.15)', border: '1px solid rgba(75,159,255,0.3)',
+              width: '100%', padding: '12px', borderRadius: '10px',
+              border: '1px solid rgba(75,159,255,0.3)',
+              background: 'rgba(75,159,255,0.15)',
               color: '#4B9FFF', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
             }}>
               + Add {DIFFICULTY_CONFIG[selectedDifficulty].label} Bot
