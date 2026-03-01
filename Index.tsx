@@ -18,6 +18,7 @@ const Index = () => {
   const [timeLeft, setTimeLeft] = useState(60000);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [liveScores, setLiveScores] = useState<LiveScore[]>([]);
+  const [tagDistance, setTagDistance] = useState(12);
   const [results, setResults] = useState<Player[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [error, setError] = useState<string>('');
@@ -62,6 +63,7 @@ const Index = () => {
           setPlayers(msg.players);
           setItPlayerId(msg.itPlayerId);
           setTimeLeft(msg.duration);
+          setTagDistance(msg.tagDistance);
           setCountdown(null);
           setLiveScores([]);
           setPhase('playing');
@@ -138,7 +140,7 @@ const Index = () => {
     return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} />;
 
   if (phase === 'countdown' || phase === 'playing')
-    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} onMouseMove={handleMouseMove} />;
+    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} onMouseMove={handleMouseMove} />;
 
   if (phase === 'results')
     return <ResultsScreen players={results} leaderboard={leaderboard} onPlayAgain={handlePlayAgain} onHome={handleHome} />;
