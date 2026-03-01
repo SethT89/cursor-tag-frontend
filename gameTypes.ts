@@ -13,6 +13,8 @@ export interface Player {
   timesTagged: number;
   retags: number;
   totalDistance: number;
+  isBot?: boolean;
+  difficulty?: string | null;
   // Results only
   score?: number;
   rank?: number;
@@ -44,6 +46,7 @@ export interface LiveScore {
   color: string;
   score: number;
   isIt: boolean;
+  isBot?: boolean;
 }
 
 export interface LeaderboardEntry {
