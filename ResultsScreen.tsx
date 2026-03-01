@@ -34,41 +34,30 @@ const EmailSignup: React.FC = () => {
     e.preventDefault();
     if (!email.trim()) return;
     setStatus('loading');
-
     try {
       const res = await fetch('https://api.beehiiv.com/v2/publications/898be2c7-d4a2-4304-859f-736e845606cc/subscriptions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email,
-          reactivate_existing: false,
-          send_welcome_email: true,
-          utm_source: 'cursor-tag-game',
-          utm_medium: 'results-screen',
+          email, reactivate_existing: false, send_welcome_email: true,
+          utm_source: 'cursor-tag-game', utm_medium: 'results-screen',
         }),
       });
-
       if (res.ok || res.status === 201) {
         setStatus('success');
-        // Remember they signed up so we don't show the form again this session
         sessionStorage.setItem('playtabrecess_subscribed', '1');
       } else {
         setStatus('error');
       }
-    } catch {
-      setStatus('error');
-    }
+    } catch { setStatus('error'); }
   };
 
-  // Already subscribed this session
   if (sessionStorage.getItem('playtabrecess_subscribed')) {
     return (
       <div style={{
         textAlign: 'center', padding: '16px',
-        background: 'rgba(75,255,165,0.08)',
-        border: '1px solid rgba(75,255,165,0.2)',
-        borderRadius: '14px',
-        color: '#4BFFA5', fontSize: '14px', fontWeight: '600',
+        background: 'rgba(75,255,165,0.08)', border: '1px solid rgba(75,255,165,0.2)',
+        borderRadius: '14px', color: '#4BFFA5', fontSize: '14px', fontWeight: '600',
       }}>
         🎮 You're on the list — we'll let you know when the next game drops!
       </div>
@@ -79,10 +68,8 @@ const EmailSignup: React.FC = () => {
     return (
       <div style={{
         textAlign: 'center', padding: '20px',
-        background: 'rgba(75,255,165,0.08)',
-        border: '1px solid rgba(75,255,165,0.2)',
-        borderRadius: '14px',
-        animation: 'popIn 0.3s ease-out',
+        background: 'rgba(75,255,165,0.08)', border: '1px solid rgba(75,255,165,0.2)',
+        borderRadius: '14px', animation: 'popIn 0.3s ease-out',
       }}>
         <div style={{ fontSize: '28px', marginBottom: '8px' }}>🎉</div>
         <div style={{ color: '#4BFFA5', fontWeight: '700', fontSize: '15px' }}>You're in!</div>
@@ -95,10 +82,8 @@ const EmailSignup: React.FC = () => {
 
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '16px',
-      padding: '20px 24px',
+      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: '16px', padding: '20px 24px',
     }}>
       <div style={{ marginBottom: '14px' }}>
         <div style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>
@@ -108,48 +93,29 @@ const EmailSignup: React.FC = () => {
           Join PlayTabRecess — be first to know when the next one is live.
         </div>
       </div>
-
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px' }}>
         <input
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="your@email.com"
-          required
+          type="email" value={email} onChange={e => setEmail(e.target.value)}
+          placeholder="your@email.com" required
           style={{
-            flex: 1,
-            padding: '12px 16px',
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '10px',
-            color: 'white',
-            fontSize: '14px',
-            outline: 'none',
+            flex: 1, padding: '12px 16px',
+            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '10px', color: 'white', fontSize: '14px', outline: 'none',
           }}
         />
-        <button
-          type="submit"
-          disabled={status === 'loading'}
-          style={{
-            padding: '12px 20px',
-            background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)',
-            border: 'none',
-            borderRadius: '10px',
-            color: 'white',
-            fontWeight: '700',
-            fontSize: '14px',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            opacity: status === 'loading' ? 0.6 : 1,
-          }}
-        >
+        <button type="submit" disabled={status === 'loading'} style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)',
+          border: 'none', borderRadius: '10px', color: 'white',
+          fontWeight: '700', fontSize: '14px', cursor: 'pointer',
+          opacity: status === 'loading' ? 0.6 : 1, whiteSpace: 'nowrap',
+        }}>
           {status === 'loading' ? '...' : "I'm in 🙌"}
         </button>
       </form>
-
       {status === 'error' && (
         <div style={{ marginTop: '8px', fontSize: '12px', color: '#FF4B6E' }}>
-          Something went wrong — try again or visit playtabrecess.beehiiv.com
+          Something went wrong — try again later.
         </div>
       )}
     </div>
@@ -177,9 +143,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
             fontSize: '42px', fontWeight: '900', margin: 0,
             background: 'linear-gradient(135deg, #FFB74B, #FF4B6E)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>
-            GAME OVER
-          </h1>
+          }}>GAME OVER</h1>
           {winner && (
             <p style={{ color: 'rgba(255,255,255,0.6)', margin: '8px 0 0', fontSize: '16px' }}>
               <span style={{ color: winner.color, fontWeight: '700' }}>{winner.name}</span> wins with {winner.score} pts!
@@ -194,8 +158,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
 
         {/* Player rankings */}
         <div style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '20px', overflow: 'hidden', marginBottom: '24px',
         }}>
           {players.map((p, i) => (
@@ -215,26 +178,43 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: '700', fontSize: '16px', color: p.color }}>{p.name}</span>
+
+                  {/* Personality Award */}
+                  {p.award && (
+                    <span style={{
+                      fontSize: '12px', padding: '3px 10px', borderRadius: '20px',
+                      background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+                      color: 'white', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px',
+                    }}>
+                      {p.award.emoji} {p.award.title}
+                    </span>
+                  )}
+
                   {p.isLoser && (
                     <span style={{
                       fontSize: '11px', padding: '2px 8px', borderRadius: '6px',
                       background: 'rgba(255,75,110,0.2)', color: '#FF4B6E',
                     }}>🏷️ LOSER</span>
                   )}
-                  {p.stats?.survivedUntagged && (
-                    <span style={{
-                      fontSize: '11px', padding: '2px 8px', borderRadius: '6px',
-                      background: 'rgba(75,255,165,0.15)', color: '#4BFFA5',
-                    }}>✨ NEVER TAGGED</span>
-                  )}
                 </div>
+
+                {/* Award description */}
+                {p.award && (
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginBottom: '8px', fontStyle: 'italic' }}>
+                    {p.award.desc}
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   <StatBadge icon="⏱️" label="Not IT" value={`${p.stats?.timeNotIt ?? 0}s`} highlight={!p.isLoser} />
-                  {p.stats?.tagsMade > 0 && <StatBadge icon="🏷️" label="Tags" value={String(p.stats.tagsMade)} />}
+                  {(p.stats?.tagsMade ?? 0) > 0 && <StatBadge icon="🏷️" label="Tags" value={String(p.stats!.tagsMade)} />}
+                  {(p.stats?.retags ?? 0) > 0 && <StatBadge icon="🔄" label="Retags" value={String(p.stats!.retags)} />}
+                  {(p.stats?.timesTagged ?? 0) > 0 && <StatBadge icon="🧲" label="Got tagged" value={String(p.stats!.timesTagged)} />}
                   {p.stats?.fastestTag != null && <StatBadge icon="⚡" label="Fastest tag" value={`${p.stats.fastestTag}s`} />}
-                  {p.stats?.survivedUntagged && <StatBadge icon="🛡️" label="Survival bonus" value="+500" highlight />}
+                  {p.stats?.survivedUntagged && <StatBadge icon="🛡️" label="Never tagged" value="✓" highlight />}
                 </div>
               </div>
+
               <div style={{
                 fontSize: '26px', fontWeight: '900',
                 color: p.rank === 1 ? '#FFB74B' : p.isLoser ? '#FF4B6E' : 'white',
@@ -246,7 +226,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
           ))}
         </div>
 
-        {/* Email signup — the money maker */}
+        {/* Email signup */}
         <div style={{ marginBottom: '24px' }}>
           <EmailSignup />
         </div>
@@ -254,8 +234,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
         {/* Global leaderboard */}
         {leaderboard.length > 0 && (
           <div style={{
-            background: 'rgba(255,183,75,0.05)',
-            border: '1px solid rgba(255,183,75,0.12)',
+            background: 'rgba(255,183,75,0.05)', border: '1px solid rgba(255,183,75,0.12)',
             borderRadius: '20px', padding: '24px', marginBottom: '24px',
           }}>
             <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '700', color: '#FFB74B' }}>
@@ -273,9 +252,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
                   <span style={{ flex: 1, fontSize: '13px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {entry.name}
                   </span>
-                  <span style={{ fontSize: '13px', color: '#4BFFA5', fontWeight: '700' }}>
-                    {entry.bestScore}
-                  </span>
+                  <span style={{ fontSize: '13px', color: '#4BFFA5', fontWeight: '700' }}>{entry.bestScore}</span>
                 </div>
               ))}
             </div>
@@ -284,16 +261,17 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
 
         {/* Scoring legend */}
         <div style={{
-          background: 'rgba(75,159,255,0.06)',
-          border: '1px solid rgba(75,159,255,0.12)',
+          background: 'rgba(75,159,255,0.06)', border: '1px solid rgba(75,159,255,0.12)',
           borderRadius: '14px', padding: '16px 20px', marginBottom: '24px',
-          display: 'flex', gap: '20px', flexWrap: 'wrap',
-          fontSize: '13px', color: 'rgba(255,255,255,0.5)',
+          display: 'flex', gap: '12px', flexWrap: 'wrap',
+          fontSize: '12px', color: 'rgba(255,255,255,0.4)',
         }}>
-          <span>⏱️ Not IT time → up to 1000 pts</span>
-          <span>✨ Never tagged → +500 pts</span>
-          <span>⚡ Fastest tag → up to +300 pts</span>
-          <span>🏷️ IT at end → -200 pts</span>
+          <span>⏱️ 10pts/sec not IT</span>
+          <span>🐇 Never IT → +10</span>
+          <span>⚡ Shortest IT streak → +10</span>
+          <span>🔄 Most retags → +10</span>
+          <span>🐁 Most frantic → +10</span>
+          <span>🏷️ IT at end → -20</span>
         </div>
 
         {/* Actions */}
@@ -302,17 +280,12 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
             flex: 2, padding: '16px', border: 'none', borderRadius: '14px',
             background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)',
             color: 'white', fontWeight: '700', fontSize: '16px', cursor: 'pointer',
-          }}>
-            🔄 Play Again
-          </button>
+          }}>🔄 Play Again</button>
           <button onClick={onHome} style={{
-            flex: 1, padding: '16px',
-            border: '1px solid rgba(255,255,255,0.15)', borderRadius: '14px',
-            background: 'rgba(255,255,255,0.05)',
+            flex: 1, padding: '16px', border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: '14px', background: 'rgba(255,255,255,0.05)',
             color: 'white', fontWeight: '600', fontSize: '15px', cursor: 'pointer',
-          }}>
-            🏠 Home
-          </button>
+          }}>🏠 Home</button>
         </div>
       </div>
 
