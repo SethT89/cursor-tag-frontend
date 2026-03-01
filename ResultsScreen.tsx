@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Player, LeaderboardEntry } from './gameTypes';
+import { Player } from './gameTypes';
 
 interface ResultsScreenProps {
   players: Player[];
-  leaderboard: LeaderboardEntry[];
   onPlayAgain: () => void;
   onHome: () => void;
 }
@@ -62,7 +61,7 @@ const EmailSignup: React.FC = () => {
   );
 };
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onPlayAgain, onHome }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, onPlayAgain, onHome }) => {
   const winner = players.find(p => p.rank === 1);
   const loser = players.find(p => p.isLoser);
 
@@ -170,33 +169,6 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ players, leaderboard, onP
           <EmailSignup />
         </div>
 
-        {/* Global leaderboard */}
-        {leaderboard.length > 0 && (
-          <div style={{
-            background: 'rgba(255,183,75,0.05)', border: '1px solid rgba(255,183,75,0.12)',
-            borderRadius: '20px', padding: '24px', marginBottom: '24px',
-          }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '700', color: '#FFB74B' }}>
-              🏆 Global Leaderboard
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              {leaderboard.slice(0, 6).map((entry, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px',
-                }}>
-                  <span style={{ fontSize: '14px', width: '20px' }}>
-                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
-                  </span>
-                  <span style={{ flex: 1, fontSize: '13px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {entry.name}
-                  </span>
-                  <span style={{ fontSize: '13px', color: '#4BFFA5', fontWeight: '700' }}>{entry.bestScore}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Scoring legend */}
         <div style={{
