@@ -3,7 +3,7 @@ import HomeScreen from './HomeScreen';
 import LobbyScreen from './LobbyScreen';
 import GameArena from './GameArena';
 import ResultsScreen from './ResultsScreen';
-import { Player, LeaderboardEntry, LiveScore, GamePhase, ServerMessage } from './gameTypes';
+import { Player, LiveScore, GamePhase, ServerMessage } from './gameTypes';
 import { useGameSocket } from './useGameSocket';
 
 const Index = () => {
@@ -20,7 +20,6 @@ const Index = () => {
   const [liveScores, setLiveScores] = useState<LiveScore[]>([]);
   const [tagDistance, setTagDistance] = useState(12);
   const [results, setResults] = useState<Player[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [error, setError] = useState<string>('');
 
   const lastSentRef = useRef(0);
@@ -39,7 +38,6 @@ const Index = () => {
           setLocalPlayerId(msg.playerId);
           setPlayers(msg.players);
           setIsHost(true);
-          setLeaderboard(msg.leaderboard || []);
           setError('');
           setPhase('lobby');
           break;
@@ -76,7 +74,6 @@ const Index = () => {
           break;
         case 'gameEnded':
           setResults(msg.players);
-          setLeaderboard(msg.leaderboard || []);
           setPhase('results');
           break;
         case 'playAgain':
@@ -93,7 +90,6 @@ const Index = () => {
   }, [onMessage, phase]);
 
   useEffect(() => {
-    if (connected && phase === 'home') send({ type: 'getLeaderboard' });
   }, [connected, send, phase]);
 
   const handleCreateGame = useCallback((name: string) => {
@@ -130,11 +126,10 @@ const Index = () => {
     setResults([]);
     setIsHost(false);
     setError('');
-    send({ type: 'getLeaderboard' });
   }, [send]);
 
   if (phase === 'home')
-    return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} leaderboard={leaderboard} connected={connected} error={error} />;
+    return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} connected={connected} error={error} />;
 
   if (phase === 'lobby')
     return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} />;
@@ -143,7 +138,7 @@ const Index = () => {
     return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} onMouseMove={handleMouseMove} />;
 
   if (phase === 'results')
-    return <ResultsScreen players={results} leaderboard={leaderboard} onPlayAgain={handlePlayAgain} onHome={handleHome} />;
+    return <ResultsScreen players={results} onPlayAgain={handlePlayAgain} onHome={handleHome} />;
 
   return null;
 };
