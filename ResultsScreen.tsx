@@ -27,31 +27,6 @@ const StatBadge: React.FC<{ icon: string; label: string; value: string; highligh
 );
 
 const EmailSignup: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setStatus('loading');
-    try {
-      const res = await fetch('https://api.beehiiv.com/v2/publications/898be2c7-d4a2-4304-859f-736e845606cc/subscriptions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email, reactivate_existing: false, send_welcome_email: true,
-          utm_source: 'cursor-tag-game', utm_medium: 'results-screen',
-        }),
-      });
-      if (res.ok || res.status === 201) {
-        setStatus('success');
-        sessionStorage.setItem('playtabrecess_subscribed', '1');
-      } else {
-        setStatus('error');
-      }
-    } catch { setStatus('error'); }
-  };
-
   if (sessionStorage.getItem('playtabrecess_subscribed')) {
     return (
       <div style={{
@@ -60,22 +35,6 @@ const EmailSignup: React.FC = () => {
         borderRadius: '14px', color: '#4BFFA5', fontSize: '14px', fontWeight: '600',
       }}>
         🎮 You're on the list — we'll let you know when the next game drops!
-      </div>
-    );
-  }
-
-  if (status === 'success') {
-    return (
-      <div style={{
-        textAlign: 'center', padding: '20px',
-        background: 'rgba(75,255,165,0.08)', border: '1px solid rgba(75,255,165,0.2)',
-        borderRadius: '14px', animation: 'popIn 0.3s ease-out',
-      }}>
-        <div style={{ fontSize: '28px', marginBottom: '8px' }}>🎉</div>
-        <div style={{ color: '#4BFFA5', fontWeight: '700', fontSize: '15px' }}>You're in!</div>
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginTop: '4px' }}>
-          We'll hit you when the next game drops.
-        </div>
       </div>
     );
   }
@@ -93,31 +52,19 @@ const EmailSignup: React.FC = () => {
           Join PlayTabRecess — be first to know when the next one is live.
         </div>
       </div>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px' }}>
-        <input
-          type="email" value={email} onChange={e => setEmail(e.target.value)}
-          placeholder="your@email.com" required
-          style={{
-            flex: 1, padding: '12px 16px',
-            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '10px', color: 'white', fontSize: '14px', outline: 'none',
-          }}
-        />
-        <button type="submit" disabled={status === 'loading'} style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)',
-          border: 'none', borderRadius: '10px', color: 'white',
-          fontWeight: '700', fontSize: '14px', cursor: 'pointer',
-          opacity: status === 'loading' ? 0.6 : 1, whiteSpace: 'nowrap',
-        }}>
-          {status === 'loading' ? '...' : "I'm in 🙌"}
-        </button>
-      </form>
-      {status === 'error' && (
-        <div style={{ marginTop: '8px', fontSize: '12px', color: '#FF4B6E' }}>
-          Something went wrong — try again later.
-        </div>
-      )}
+      <iframe
+        src="https://subscribe-forms.beehiiv.com/d3e61ef5-5de4-4793-9393-2a5dd8788019"
+        frameBorder={0}
+        scrolling="no"
+        style={{
+          width: '100%',
+          height: '164px',
+          background: 'transparent',
+          border: 'none',
+          display: 'block',
+          borderRadius: '12px',
+        }}
+      />
     </div>
   );
 };
