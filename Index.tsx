@@ -3,7 +3,7 @@ import HomeScreen from './HomeScreen';
 import LobbyScreen from './LobbyScreen';
 import GameArena from './GameArena';
 import ResultsScreen from './ResultsScreen';
-import { Player, LiveScore, GamePhase, ServerMessage } from './gameTypes';
+import { Player, LiveScore, GamePhase, GameMode, ServerMessage } from './gameTypes';
 import { useGameSocket } from './useGameSocket';
 
 const Index = () => {
@@ -18,11 +18,15 @@ const Index = () => {
   const [timeLeft, setTimeLeft] = useState(60000);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [liveScores, setLiveScores] = useState<LiveScore[]>([]);
-  const [tagDistance, setTagDistance] = useState(12);
+  const [tagDistance, setTagDistance] = useState(8);
+  const [mode, setMode] = useState<GameMode>('classic');
+  const [humansLeft, setHumansLeft] = useState<number | null>(null);
   const [results, setResults] = useState<Player[]>([]);
+  const [resultMode, setResultMode] = useState<GameMode>('classic');
   const [error, setError] = useState<string>('');
 
   const lastSentRef = useRef(0);
+
   const handleMouseMove = useCallback((x: number, y: number) => {
     const now = Date.now();
     if (now - lastSentRef.current < 50) return;
@@ -38,6 +42,7 @@ const Index = () => {
           setLocalPlayerId(msg.playerId);
           setPlayers(msg.players);
           setIsHost(true);
+          setMode(msg.mode || 'classic');
           setError('');
           setPhase('lobby');
           break;
@@ -46,8 +51,13 @@ const Index = () => {
           setLocalPlayerId(msg.playerId);
           setPlayers(msg.players);
           setIsHost(false);
+          setMode(msg.mode || 'classic');
           setError('');
           setPhase('lobby');
+          break;
+        case 'modeChanged':
+          setMode(msg.mode);
+          setPlayers(msg.players);
           break;
         case 'playerJoined':
         case 'playerLeft':
@@ -59,25 +69,30 @@ const Index = () => {
           break;
         case 'gameStarted':
           setPlayers(msg.players);
-          setItPlayerId(msg.itPlayerId);
+          setItPlayerId(msg.itPlayerId || '');
           setTimeLeft(msg.duration);
           setTagDistance(msg.tagDistance);
+          setMode(msg.mode);
           setCountdown(null);
           setLiveScores([]);
+          setHumansLeft(null);
           setPhase('playing');
           break;
         case 'gameState':
           setPlayers(msg.players);
-          setItPlayerId(msg.itPlayerId);
+          setItPlayerId(msg.itPlayerId || '');
           setTimeLeft(msg.timeLeft);
           if (msg.liveScores) setLiveScores(msg.liveScores);
+          if (msg.humansLeft !== undefined) setHumansLeft(msg.humansLeft);
           break;
         case 'gameEnded':
           setResults(msg.players);
+          setResultMode(msg.mode);
           setPhase('results');
           break;
         case 'playAgain':
           setPlayers(msg.players);
+          setMode(msg.mode || 'classic');
           setPhase('lobby');
           setResults([]);
           break;
@@ -88,9 +103,6 @@ const Index = () => {
     });
     return unsubscribe;
   }, [onMessage, phase]);
-
-  useEffect(() => {
-  }, [connected, send, phase]);
 
   const handleCreateGame = useCallback((name: string) => {
     setError('');
@@ -112,6 +124,10 @@ const Index = () => {
     send({ type: 'removeBot', botId });
   }, [send]);
 
+  const handleSetMode = useCallback((newMode: GameMode) => {
+    send({ type: 'setMode', mode: newMode });
+  }, [send]);
+
   const handlePlayAgain = useCallback(() => {
     send({ type: 'playAgain' });
     setPhase('lobby');
@@ -126,19 +142,21 @@ const Index = () => {
     setResults([]);
     setIsHost(false);
     setError('');
-  }, [send]);
+    setMode('classic');
+    setHumansLeft(null);
+  }, []);
 
   if (phase === 'home')
     return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} connected={connected} error={error} />;
 
   if (phase === 'lobby')
-    return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} />;
+    return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} mode={mode} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} onSetMode={handleSetMode} />;
 
   if (phase === 'countdown' || phase === 'playing')
-    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} onMouseMove={handleMouseMove} />;
+    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} mode={mode} humansLeft={humansLeft} onMouseMove={handleMouseMove} />;
 
   if (phase === 'results')
-    return <ResultsScreen players={results} onPlayAgain={handlePlayAgain} onHome={handleHome} />;
+    return <ResultsScreen players={results} mode={resultMode} onPlayAgain={handlePlayAgain} onHome={handleHome} />;
 
   return null;
 };
