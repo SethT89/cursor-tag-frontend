@@ -130,8 +130,8 @@ const Index = () => {
 
   const handlePlayAgain = useCallback(() => {
     send({ type: 'playAgain' });
-    setPhase('lobby');
-    setResults([]);
+    // Don't set phase here — wait for server 'playAgain' message to drive the transition
+    // This ensures room.state='waiting' on server before any setMode calls can fire
   }, [send]);
 
   const handleHome = useCallback(() => {
