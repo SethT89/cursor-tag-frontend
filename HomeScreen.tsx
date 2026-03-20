@@ -63,19 +63,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, conne
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏷️</div>
-          <h1 style={{
-            fontSize: '48px',
-            fontWeight: '900',
-            margin: 0,
-            background: 'linear-gradient(135deg, #FF4B6E, #4B9FFF, #4BFFA5)',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            color: 'transparent',
-            letterSpacing: '-2px',
-            display: 'inline-block',
-          }}>
-            CURSOR TAG
+          <h1 style={{ fontSize: '48px', fontWeight: '900', margin: 0, letterSpacing: '-2px' }}>
+            <span style={{
+              background: 'linear-gradient(135deg, #FF4B6E, #4B9FFF, #4BFFA5)',
+              WebkitBackgroundClip: 'text', backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent', color: 'transparent',
+              display: 'inline',
+            }}>CURSOR TAG</span>
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', margin: '8px 0 0', fontSize: '15px' }}>
             Real-time multiplayer cursor mayhem
