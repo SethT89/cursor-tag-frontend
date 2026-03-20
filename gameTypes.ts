@@ -76,12 +76,25 @@ export interface LeaderboardEntry {
 
 export type GamePhase = 'home' | 'lobby' | 'countdown' | 'playing' | 'results';
 
+export interface PublicRoom {
+  code: string;
+  hostName: string;
+  mode: GameMode;
+  playerCount: number;
+  humanCount: number;
+  botCount: number;
+  maxPlayers: number;
+  openSlots: number;
+}
+
 export type ServerMessage =
   | { type: 'roomCreated'; roomCode: string; playerId: string; players: Player[]; color: string; mode: GameMode }
   | { type: 'roomJoined'; roomCode: string; playerId: string; players: Player[]; color: string; mode: GameMode }
   | { type: 'playerJoined'; players: Player[] }
   | { type: 'playerLeft'; players: Player[] }
   | { type: 'modeChanged'; mode: GameMode; players: Player[] }
+  | { type: 'visibilityChanged'; isPublic: boolean }
+  | { type: 'roomList'; rooms: PublicRoom[] }
   | { type: 'countdown'; count: number }
   | { type: 'gameStarted'; players: Player[]; itPlayerId: string; duration: number; tagDistance: number; mode: GameMode; patientZeroId?: string }
   | { type: 'gameState'; players: Player[]; itPlayerId: string | null; timeLeft: number; liveScores: LiveScore[]; mode: GameMode; humansLeft?: number }
