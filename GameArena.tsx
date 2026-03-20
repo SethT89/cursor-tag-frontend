@@ -361,7 +361,7 @@ const GameArena: React.FC<GameArenaProps> = ({
               fontSize: '11px', fontWeight: '700', color: isZombieMode ? 'rgba(77,255,110,0.6)' : 'rgba(255,255,255,0.4)',
               letterSpacing: '1px', textTransform: 'uppercase',
             }}>
-              {isZombieMode ? '🧟 Survival' : '🏆 Live Scores'}
+              {isZombieMode ? '🧟 Live Scores' : '🏆 Live Scores'}
             </div>
             {liveScores.map((s, i) => {
               const isLocal = s.id === localPlayerId;
@@ -390,7 +390,7 @@ const GameArena: React.FC<GameArenaProps> = ({
                     {s.name}{s.isBot ? ' 🤖' : ''}
                   </span>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: s.isZombie ? ZOMBIE_COLOR : 'rgba(255,255,255,0.5)', minWidth: '28px', textAlign: 'right' }}>
-                    {isZombieMode ? (s.isZombie ? `${s.score}🧟` : `${s.score}s`) : s.score}
+                    {isZombieMode ? s.score : s.score}
                   </span>
                 </div>
               );
