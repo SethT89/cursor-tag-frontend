@@ -69,8 +69,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, conne
             margin: 0,
             background: 'linear-gradient(135deg, #FF4B6E, #4B9FFF, #4BFFA5)',
             WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
+            color: 'transparent',
             letterSpacing: '-2px',
+            display: 'inline-block',
           }}>
             CURSOR TAG
           </h1>
