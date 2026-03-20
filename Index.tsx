@@ -3,7 +3,7 @@ import HomeScreen from './HomeScreen';
 import LobbyScreen from './LobbyScreen';
 import GameArena from './GameArena';
 import ResultsScreen from './ResultsScreen';
-import { Player, LiveScore, GamePhase, GameMode, ServerMessage } from './gameTypes';
+import { Player, LiveScore, GamePhase, GameMode, ServerMessage, PublicRoom } from './gameTypes';
 import { useGameSocket } from './useGameSocket';
 
 const Index = () => {
@@ -20,6 +20,8 @@ const Index = () => {
   const [liveScores, setLiveScores] = useState<LiveScore[]>([]);
   const [tagDistance, setTagDistance] = useState(8);
   const [mode, setMode] = useState<GameMode>('classic');
+  const [isPublic, setIsPublic] = useState(false);
+  const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
   const [humansLeft, setHumansLeft] = useState<number | null>(null);
   const [results, setResults] = useState<Player[]>([]);
   const [resultMode, setResultMode] = useState<GameMode>('classic');
@@ -43,6 +45,7 @@ const Index = () => {
           setPlayers(msg.players);
           setIsHost(true);
           setMode(msg.mode || 'classic');
+          setIsPublic(msg.isPublic || false);
           setError('');
           setPhase('lobby');
           break;
@@ -52,8 +55,15 @@ const Index = () => {
           setPlayers(msg.players);
           setIsHost(false);
           setMode(msg.mode || 'classic');
+          setIsPublic(msg.isPublic || false);
           setError('');
           setPhase('lobby');
+          break;
+        case 'visibilityChanged':
+          setIsPublic(msg.isPublic);
+          break;
+        case 'roomList':
+          setPublicRooms(msg.rooms);
           break;
         case 'modeChanged':
           setMode(msg.mode);
@@ -124,6 +134,14 @@ const Index = () => {
     send({ type: 'removeBot', botId });
   }, [send]);
 
+  const handleSetVisibility = useCallback((pub: boolean) => {
+    send({ type: 'setVisibility', isPublic: pub });
+  }, [send]);
+
+  const handleBrowseRooms = useCallback(() => {
+    send({ type: 'browseRooms' });
+  }, [send]);
+
   const handleSetMode = useCallback((newMode: GameMode) => {
     send({ type: 'setMode', mode: newMode });
   }, [send]);
@@ -142,15 +160,17 @@ const Index = () => {
     setResults([]);
     setIsHost(false);
     setError('');
+    setIsPublic(false);
+    setPublicRooms([]);
     setMode('classic');
     setHumansLeft(null);
   }, []);
 
   if (phase === 'home')
-    return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} connected={connected} error={error} />;
+    return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} onBrowseRooms={handleBrowseRooms} publicRooms={publicRooms} connected={connected} error={error} />;
 
   if (phase === 'lobby')
-    return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} mode={mode} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} onSetMode={handleSetMode} />;
+    return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} mode={mode} isPublic={isPublic} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} onSetMode={handleSetMode} onSetVisibility={handleSetVisibility} />;
 
   if (phase === 'countdown' || phase === 'playing')
     return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} mode={mode} humansLeft={humansLeft} onMouseMove={handleMouseMove} />;
