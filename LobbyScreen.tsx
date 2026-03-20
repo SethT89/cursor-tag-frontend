@@ -7,11 +7,13 @@ interface LobbyScreenProps {
   localPlayerId: string;
   isHost: boolean;
   mode: GameMode;
+  isPublic: boolean;
   onStartGame: () => void;
   onBack: () => void;
   onAddBot: (difficulty: 'easy' | 'medium' | 'hard') => void;
   onRemoveBot: (botId: string) => void;
   onSetMode: (mode: GameMode) => void;
+  onSetVisibility: (isPublic: boolean) => void;
 }
 
 const DIFFICULTY_CONFIG = {
@@ -21,7 +23,7 @@ const DIFFICULTY_CONFIG = {
 };
 
 const LobbyScreen: React.FC<LobbyScreenProps> = ({
-  roomCode, players, localPlayerId, isHost, mode, onStartGame, onBack, onAddBot, onRemoveBot, onSetMode,
+  roomCode, players, localPlayerId, isHost, mode, isPublic, onStartGame, onBack, onAddBot, onRemoveBot, onSetMode, onSetVisibility,
 }) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [copied, setCopied] = useState(false);
@@ -117,6 +119,59 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
               fontSize: '13px', fontWeight: '600',
             }}>
               {mode === 'zombie' ? '🧟 Zombie Mode' : '🏷️ Classic Tag'}
+            </span>
+          </div>
+        )}
+
+        {/* Visibility toggle — host only */}
+        {isHost && (
+          <div style={{
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px', padding: '16px 20px', marginBottom: '20px',
+          }}>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>
+              🔐 Room Visibility
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => onSetVisibility(false)} style={{
+                flex: 1, padding: '12px 10px', borderRadius: '12px', cursor: 'pointer',
+                border: !isPublic ? '2px solid rgba(255,183,75,0.7)' : '1px solid rgba(255,255,255,0.08)',
+                background: !isPublic ? 'rgba(255,183,75,0.1)' : 'rgba(255,255,255,0.03)',
+                color: 'white', transition: 'all 0.2s',
+              }}>
+                <div style={{ fontSize: '20px', marginBottom: '4px' }}>🔒</div>
+                <div style={{ fontWeight: '700', fontSize: '13px' }}>Private</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>Invite with code only</div>
+              </button>
+              <button onClick={() => onSetVisibility(true)} style={{
+                flex: 1, padding: '12px 10px', borderRadius: '12px', cursor: 'pointer',
+                border: isPublic ? '2px solid rgba(75,159,255,0.7)' : '1px solid rgba(255,255,255,0.08)',
+                background: isPublic ? 'rgba(75,159,255,0.1)' : 'rgba(255,255,255,0.03)',
+                color: 'white', transition: 'all 0.2s',
+              }}>
+                <div style={{ fontSize: '20px', marginBottom: '4px' }}>🌐</div>
+                <div style={{ fontWeight: '700', fontSize: '13px' }}>Public</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>Anyone can find & join</div>
+              </button>
+            </div>
+            {isPublic && (
+              <div style={{ marginTop: '10px', padding: '8px 12px', background: 'rgba(75,159,255,0.07)', borderRadius: '8px', fontSize: '12px', color: 'rgba(75,159,255,0.8)' }}>
+                🌐 Your room is visible in Browse Rooms. Friends can still use the code too.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Visibility badge for non-hosts */}
+        {!isHost && (
+          <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+            <span style={{
+              display: 'inline-block', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
+              background: isPublic ? 'rgba(75,159,255,0.1)' : 'rgba(255,183,75,0.1)',
+              border: `1px solid ${isPublic ? 'rgba(75,159,255,0.3)' : 'rgba(255,183,75,0.3)'}`,
+              color: isPublic ? '#4B9FFF' : '#FFB74B',
+            }}>
+              {isPublic ? '🌐 Public Room' : '🔒 Private Room'}
             </span>
           </div>
         )}
