@@ -1,46 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { PublicRoom } from './gameTypes';
 
 interface HomeScreenProps {
   onCreateGame: (name: string) => void;
   onJoinGame: (name: string, roomCode: string) => void;
+  onBrowseRooms: () => void;
+  publicRooms: PublicRoom[];
   connected: boolean;
   error?: string;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, connected, error }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({
+  onCreateGame, onJoinGame, onBrowseRooms, publicRooms, connected, error,
+}) => {
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [mode, setMode] = useState<'create' | 'join'>('create');
+  const [tab, setTab] = useState<'create' | 'join' | 'browse'>('create');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Auto-refresh room list every 3s while on Browse tab
+  useEffect(() => {
+    if (tab !== 'browse' || !connected) return;
+    onBrowseRooms();
+    const iv = setInterval(onBrowseRooms, 3000);
+    return () => clearInterval(iv);
+  }, [tab, connected]);
+
+  const handleQuickJoin = (code: string) => {
     if (!name.trim()) return;
-    if (mode === 'create') {
-      onCreateGame(name.trim());
-    } else {
-      if (!roomCode.trim()) return;
-      onJoinGame(name.trim(), roomCode.trim().toUpperCase());
-    }
+    onJoinGame(name.trim(), code);
   };
 
   return (
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0f0f1a 0%, #1a0f2e 50%, #0f1a2e 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontFamily: "'Inter', 'Segoe UI', sans-serif",
-      color: 'white',
-      padding: '20px',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: "'Inter', 'Segoe UI', sans-serif", color: 'white', padding: '20px',
     }}>
       {/* Animated background cursors */}
       <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', opacity: 0.15 }}>
         {['#FF4B6E','#4BFFA5','#4B9FFF','#FFB74B','#C84BFF'].map((color, i) => (
           <div key={i} style={{
-            position: 'absolute',
-            left: `${15 + i * 18}%`,
-            top: `${20 + (i % 3) * 25}%`,
+            position: 'absolute', left: `${15 + i * 18}%`, top: `${20 + (i % 3) * 25}%`,
             animation: `float${i} ${3 + i}s ease-in-out infinite`,
           }}>
             <svg width="24" height="32" viewBox="0 0 24 32" fill="none">
@@ -52,13 +53,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, conne
 
       {/* Main card */}
       <div style={{
-        width: '100%',
-        maxWidth: '480px',
-        background: 'rgba(255,255,255,0.05)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: '24px',
-        padding: '48px',
+        width: '100%', maxWidth: '480px',
+        background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', padding: '48px',
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -67,8 +64,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, conne
             <span style={{
               background: 'linear-gradient(135deg, #FF4B6E, #4B9FFF, #4BFFA5)',
               WebkitBackgroundClip: 'text', backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent', color: 'transparent',
-              display: 'inline',
+              WebkitTextFillColor: 'transparent', color: 'transparent', display: 'inline',
             }}>CURSOR TAG</span>
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', margin: '8px 0 0', fontSize: '15px' }}>
@@ -77,13 +73,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, conne
         </div>
 
         {/* Connection status */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          justifyContent: 'center',
-          marginBottom: '32px',
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '32px' }}>
           <div style={{
             width: '8px', height: '8px', borderRadius: '50%',
             background: connected ? '#4BFFA5' : '#FF4B6E',
@@ -96,54 +86,55 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, conne
 
         {error && (
           <div style={{
-            background: 'rgba(255,75,110,0.15)',
-            border: '1px solid rgba(255,75,110,0.4)',
-            borderRadius: '12px',
-            padding: '12px 16px',
-            marginBottom: '24px',
-            color: '#FF4B6E',
-            fontSize: '14px',
-            textAlign: 'center',
-          }}>
-            {error}
-          </div>
+            background: 'rgba(255,75,110,0.15)', border: '1px solid rgba(255,75,110,0.4)',
+            borderRadius: '12px', padding: '12px 16px', marginBottom: '24px',
+            color: '#FF4B6E', fontSize: '14px', textAlign: 'center',
+          }}>{error}</div>
         )}
 
-        {/* Mode toggle */}
+        {/* Tab toggle */}
         <div style={{
-          display: 'flex',
-          background: 'rgba(255,255,255,0.05)',
-          borderRadius: '12px',
-          padding: '4px',
-          marginBottom: '24px',
+          display: 'flex', background: 'rgba(255,255,255,0.05)',
+          borderRadius: '12px', padding: '4px', marginBottom: '24px',
         }}>
-          {(['create', 'join'] as const).map(m => (
-            <button key={m} onClick={() => setMode(m)} style={{
-              flex: 1,
-              padding: '10px',
-              border: 'none',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '14px',
-              transition: 'all 0.2s',
-              background: mode === m ? 'rgba(255,255,255,0.12)' : 'transparent',
-              color: mode === m ? 'white' : 'rgba(255,255,255,0.4)',
+          {(['create', 'join', 'browse'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex: 1, padding: '10px', border: 'none', borderRadius: '10px',
+              cursor: 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s',
+              background: tab === t ? 'rgba(255,255,255,0.12)' : 'transparent',
+              color: tab === t ? 'white' : 'rgba(255,255,255,0.4)',
             }}>
-              {m === 'create' ? '✨ Create Room' : '🔗 Join Room'}
+              {t === 'create' ? '✨ Create' : t === 'join' ? '🔗 Join' : '🌐 Browse'}
             </button>
           ))}
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <input
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Your name"
-            maxLength={20}
-            style={inputStyle}
-          />
-          {mode === 'join' && (
+        {/* Name field — always shown */}
+        <input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="Your name"
+          maxLength={20}
+          style={inputStyle}
+        />
+
+        {/* Create tab */}
+        {tab === 'create' && (
+          <button
+            onClick={() => { if (name.trim() && connected) onCreateGame(name.trim()); }}
+            disabled={!connected || !name.trim()}
+            style={{
+              width: '100%', padding: '16px', border: 'none', borderRadius: '14px',
+              background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)', color: 'white',
+              fontWeight: '700', fontSize: '16px', cursor: 'pointer',
+              opacity: (!connected || !name.trim()) ? 0.4 : 1, transition: 'all 0.2s',
+            }}
+          >🚀 Create Game</button>
+        )}
+
+        {/* Join tab */}
+        {tab === 'join' && (
+          <>
             <input
               value={roomCode}
               onChange={e => setRoomCode(e.target.value.toUpperCase())}
@@ -151,28 +142,96 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, conne
               maxLength={5}
               style={{ ...inputStyle, letterSpacing: '4px', textTransform: 'uppercase' }}
             />
-          )}
-          <button
-            type="submit"
-            disabled={!connected || !name.trim() || (mode === 'join' && !roomCode.trim())}
-            style={{
-              width: '100%',
-              padding: '16px',
-              border: 'none',
-              borderRadius: '14px',
-              background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)',
-              color: 'white',
-              fontWeight: '700',
-              fontSize: '16px',
-              cursor: 'pointer',
-              opacity: (!connected || !name.trim()) ? 0.4 : 1,
-              transition: 'all 0.2s',
-              marginTop: '8px',
-            }}
-          >
-            {mode === 'create' ? '🚀 Create Game' : '🎮 Join Game'}
-          </button>
-        </form>
+            <button
+              onClick={() => { if (name.trim() && roomCode.trim()) onJoinGame(name.trim(), roomCode.trim().toUpperCase()); }}
+              disabled={!connected || !name.trim() || !roomCode.trim()}
+              style={{
+                width: '100%', padding: '16px', border: 'none', borderRadius: '14px',
+                background: 'linear-gradient(135deg, #FF4B6E, #C84BFF)', color: 'white',
+                fontWeight: '700', fontSize: '16px', cursor: 'pointer',
+                opacity: (!connected || !name.trim() || !roomCode.trim()) ? 0.4 : 1,
+                transition: 'all 0.2s',
+              }}
+            >🎮 Join Game</button>
+          </>
+        )}
+
+        {/* Browse tab */}
+        {tab === 'browse' && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                Open Rooms
+              </span>
+              <button onClick={onBrowseRooms} style={{
+                padding: '4px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)',
+                fontSize: '12px', cursor: 'pointer', fontWeight: '600',
+              }}>↻ Refresh</button>
+            </div>
+
+            {publicRooms.length === 0 ? (
+              <div style={{
+                padding: '32px 20px', textAlign: 'center',
+                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '14px', color: 'rgba(255,255,255,0.3)', fontSize: '14px',
+              }}>
+                No public rooms open right now
+                <div style={{ marginTop: '8px', fontSize: '12px' }}>Create one and flip it to public!</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {publicRooms.map(r => (
+                  <div key={r.code} style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '14px', padding: '14px 16px',
+                  }}>
+                    <div style={{ fontSize: '22px' }}>{r.mode === 'zombie' ? '🧟' : '🏷️'}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '2px' }}>
+                        {r.hostName}'s room
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <span>{r.mode === 'zombie' ? 'Zombie Mode' : 'Classic Tag'}</span>
+                        <span>·</span>
+                        <span>{r.humanCount}/{r.maxPlayers} players</span>
+                        <span>·</span>
+                        <span style={{ color: r.openSlots <= 2 ? '#FFB74B' : 'rgba(255,255,255,0.4)' }}>
+                          {r.openSlots} slot{r.openSlots !== 1 ? 's' : ''} open
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleQuickJoin(r.code)}
+                      disabled={!name.trim()}
+                      style={{
+                        padding: '8px 16px', borderRadius: '10px', border: 'none',
+                        background: name.trim()
+                          ? r.mode === 'zombie'
+                            ? 'linear-gradient(135deg, #1a8c2e, #4dff6e)'
+                            : 'linear-gradient(135deg, #FF4B6E, #C84BFF)'
+                          : 'rgba(255,255,255,0.08)',
+                        color: name.trim() ? 'white' : 'rgba(255,255,255,0.3)',
+                        fontWeight: '700', fontSize: '13px',
+                        cursor: name.trim() ? 'pointer' : 'not-allowed',
+                        whiteSpace: 'nowrap', flexShrink: 0,
+                      }}
+                    >
+                      {name.trim() ? 'Join →' : 'Enter name'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!name.trim() && publicRooms.length > 0 && (
+              <div style={{ marginTop: '10px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+                Enter your name above to join a room
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -181,22 +240,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onCreateGame, onJoinGame, conne
         @keyframes float2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(15px,-25px); } }
         @keyframes float3 { 0%,100% { transform: translate(0,0) rotate(15deg); } 50% { transform: translate(-20px,35px) rotate(-5deg); } }
         @keyframes float4 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(25px,-15px) rotate(8deg); } }
+        html, body, #root { height: auto !important; overflow: visible !important; }
       `}</style>
     </div>
   );
 };
 
 const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '14px 18px',
-  marginBottom: '12px',
-  background: 'rgba(255,255,255,0.07)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: '12px',
-  color: 'white',
-  fontSize: '16px',
-  outline: 'none',
-  boxSizing: 'border-box',
+  width: '100%', padding: '14px 18px', marginBottom: '12px',
+  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: '12px', color: 'white', fontSize: '16px', outline: 'none', boxSizing: 'border-box',
 };
 
 export default HomeScreen;
