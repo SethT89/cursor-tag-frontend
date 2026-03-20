@@ -57,7 +57,9 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
             background: mode === 'zombie'
               ? 'linear-gradient(135deg, #4dff6e, #a0ff4b)'
               : 'linear-gradient(135deg, #a78bfa, #60a5fa)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            WebkitBackgroundClip: 'text', backgroundClip: 'text',
+            WebkitTextFillColor: 'transparent', color: 'transparent',
+            display: 'inline-block',
           }}>Game Lobby</h1>
           <p style={{ color: 'rgba(255,255,255,0.4)', margin: 0, fontSize: '14px' }}>
             {isHost ? 'Choose a mode, add bots, and start when ready' : 'Waiting for host to start...'}
