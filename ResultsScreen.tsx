@@ -193,9 +193,10 @@ const ZombieResults: React.FC<{ players: Player[]; reason: string }> = ({ player
       </div>
 
       <div style={{ background: 'rgba(76,175,80,0.05)', border: '1px solid rgba(76,175,80,0.12)', borderRadius: '14px', padding: '16px 20px', marginBottom: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-        <span>🧍 Survive → score = survival time</span>
-        <span>🦠 Patient Zero → infections × 20 + speed bonus</span>
-        <span>🧟 Infected → score = time survived before infection</span>
+        <span>🧍 Survive full game → 1000 pts</span>
+        <span>🧍 Partial survival → 601–999 pts</span>
+        <span>🧟 Patient Zero → up to 600 pts (infections + speed)</span>
+        <span>🦠 Infected → up to 500 pts (survival time + infections caused)</span>
       </div>
     </>
   );
