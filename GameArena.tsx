@@ -45,6 +45,8 @@ const GameArena: React.FC<GameArenaProps> = ({
   const tagDistRef     = useRef(tagDistance);
   const modeRef        = useRef(mode);
   const prevRanksRef   = useRef<Map<string, number>>(new Map());
+  const prevScoresRef  = useRef<Map<string, number>>(new Map());
+  const flashRef       = useRef<Map<string, { delta: number; at: number }>>(new Map());
   const [renderTick, setRenderTick] = useState(0);
 
   useEffect(() => { playersRef.current = players; }, [players]);
@@ -368,6 +370,18 @@ const GameArena: React.FC<GameArenaProps> = ({
               const prevRank = prevRanksRef.current.get(s.id);
               const moved = prevRank !== undefined && prevRank !== i;
               prevRanksRef.current.set(s.id, i);
+
+              // Detect score jumps for flash badge (infection/freeze events)
+              const prevScore = prevScoresRef.current.get(s.id);
+              const delta = prevScore !== undefined ? s.score - prevScore : 0;
+              const now = Date.now();
+              if (delta > 30 && isZombieMode) {
+                flashRef.current.set(s.id, { delta, at: now });
+              }
+              prevScoresRef.current.set(s.id, s.score);
+              const flash = flashRef.current.get(s.id);
+              const showFlash = flash && (now - flash.at) < 1500;
+
               const dotColor = s.isZombie ? ZOMBIE_COLOR : s.isTurning ? TURNING_COLOR : s.color;
               return (
                 <div key={s.id} style={{
@@ -377,6 +391,7 @@ const GameArena: React.FC<GameArenaProps> = ({
                   transition: 'all 0.4s ease',
                   animation: moved ? 'rankMove 0.4s ease-out' : undefined,
                   opacity: s.isZombie ? 0.8 : 1,
+                  position: 'relative',
                 }}>
                   <span style={{ fontSize: '12px', width: '18px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontWeight: '700' }}>
                     {s.isZombie ? '🧟' : s.isTurning ? '😱' : i + 1}
@@ -389,9 +404,23 @@ const GameArena: React.FC<GameArenaProps> = ({
                   }}>
                     {s.name}{s.isBot ? ' 🤖' : ''}
                   </span>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: s.isZombie ? ZOMBIE_COLOR : 'rgba(255,255,255,0.5)', minWidth: '28px', textAlign: 'right' }}>
-                    {isZombieMode ? s.score : s.score}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative' }}>
+                    {showFlash && flash && (
+                      <span style={{
+                        fontSize: '10px', fontWeight: '800',
+                        color: s.isZombie ? ZOMBIE_COLOR : '#4BFFA5',
+                        animation: 'scoreFlash 1.5s ease-out forwards',
+                        position: 'absolute', right: '100%', marginRight: '4px', whiteSpace: 'nowrap',
+                      }}>
+                        +{flash.delta}
+                      </span>
+                    )}
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: s.isZombie ? ZOMBIE_COLOR : 'rgba(255,255,255,0.5)', minWidth: '32px', textAlign: 'right',
+                      animation: showFlash ? 'scorePop 0.3s ease-out' : undefined,
+                    }}>
+                      {isZombieMode ? s.score : s.score}
+                    </span>
+                  </div>
                 </div>
               );
             })}
@@ -452,6 +481,8 @@ const GameArena: React.FC<GameArenaProps> = ({
         @keyframes zombieGlow { from { box-shadow:0 0 20px rgba(77,255,110,0.3); } to { box-shadow:0 0 50px rgba(77,255,110,0.7); } }
         @keyframes turningFlicker { 0% { opacity:1; } 100% { opacity:0.6; } }
         @keyframes rankMove { 0% { transform:translateY(-8px); opacity:0.5; } 100% { transform:translateY(0); opacity:1; } }
+        @keyframes scoreFlash { 0% { opacity:1; transform:translateY(0); } 100% { opacity:0; transform:translateY(-12px); } }
+        @keyframes scorePop { 0% { transform:scale(1.4); } 100% { transform:scale(1); } }
         @keyframes tagZonePulse { 0%,100% { opacity:0.3; } 50% { opacity:0.55; } }
         @keyframes zombieZonePulse { 0%,100% { opacity:0.25; } 50% { opacity:0.5; } }
         @keyframes bounce { from { transform:translateY(0); } to { transform:translateY(-4px); } }
