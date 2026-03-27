@@ -16,6 +16,7 @@ interface GameArenaProps {
   tagDistance?: number;
   mode?: GameMode;
   humansLeft?: number | null;
+  hostName?: string;
   onMouseMove: (x: number, y: number) => void;
 }
 
@@ -33,7 +34,7 @@ function zombifyColor(color: string, isZombie: boolean, isTurning: boolean): str
 
 const GameArena: React.FC<GameArenaProps> = ({
   players, localPlayerId, itPlayerId, timeLeft, countdown, liveScores = [],
-  tagDistance = 8, mode = 'classic', humansLeft, onMouseMove,
+  tagDistance = 8, mode = 'classic', humansLeft, hostName, onMouseMove,
 }) => {
   const arenaRef       = useRef<HTMLDivElement>(null);
   const canvasRef      = useRef<HTMLCanvasElement>(null);
@@ -47,7 +48,16 @@ const GameArena: React.FC<GameArenaProps> = ({
   const prevRanksRef   = useRef<Map<string, number>>(new Map());
   const prevScoresRef  = useRef<Map<string, number>>(new Map());
   const flashRef       = useRef<Map<string, { delta: number; at: number }>>(new Map());
+  const [showHostBanner, setShowHostBanner] = useState(true);
   const [renderTick, setRenderTick] = useState(0);
+
+  // Hide host banner after 1.8s
+  useEffect(() => {
+    if (countdown != null) {
+      const t = setTimeout(() => setShowHostBanner(false), 1800);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   useEffect(() => { playersRef.current = players; }, [players]);
   useEffect(() => { tagDistRef.current = tagDistance; }, [tagDistance]);
@@ -276,6 +286,32 @@ const GameArena: React.FC<GameArenaProps> = ({
       {/* Canvas — local cursor */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 40 }} />
 
+      {/* Host started banner */}
+      {showHostBanner && countdown != null && countdown > 0 && (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 101, pointerEvents: 'none',
+          animation: 'hostBannerIn 0.4s ease-out, hostBannerOut 0.4s ease-in 1.4s forwards',
+        }}>
+          <div style={{
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)',
+            border: `1px solid ${isZombieMode ? 'rgba(77,255,110,0.4)' : 'rgba(255,255,255,0.2)'}`,
+            borderRadius: '20px', padding: '20px 36px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+              {isZombieMode ? '🧟' : '🚀'}
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '800', marginBottom: '4px' }}>
+              {hostName ? `${hostName} started the game!` : 'Game is starting!'}
+            </div>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>
+              {isZombieMode ? 'Brace yourself — the outbreak begins' : 'Get to your cursors'}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Countdown overlay */}
       {countdown != null && countdown > 0 && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
@@ -483,6 +519,8 @@ const GameArena: React.FC<GameArenaProps> = ({
         @keyframes rankMove { 0% { transform:translateY(-8px); opacity:0.5; } 100% { transform:translateY(0); opacity:1; } }
         @keyframes scoreFlash { 0% { opacity:1; transform:translateY(0); } 100% { opacity:0; transform:translateY(-12px); } }
         @keyframes scorePop { 0% { transform:scale(1.4); } 100% { transform:scale(1); } }
+        @keyframes hostBannerIn { from { opacity:0; transform:translate(-50%,-50%) scale(0.85); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+        @keyframes hostBannerOut { from { opacity:1; transform:translate(-50%,-50%) scale(1); } to { opacity:0; transform:translate(-50%,-60%) scale(0.9); } }
         @keyframes tagZonePulse { 0%,100% { opacity:0.3; } 50% { opacity:0.55; } }
         @keyframes zombieZonePulse { 0%,100% { opacity:0.25; } 50% { opacity:0.5; } }
         @keyframes bounce { from { transform:translateY(0); } to { transform:translateY(-4px); } }
