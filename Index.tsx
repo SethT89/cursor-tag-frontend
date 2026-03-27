@@ -178,7 +178,7 @@ const Index = () => {
     return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} mode={mode} isPublic={isPublic} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} onSetMode={handleSetMode} onSetVisibility={handleSetVisibility} />;
 
   if (phase === 'countdown' || phase === 'playing')
-    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} mode={mode} humansLeft={humansLeft} onMouseMove={handleMouseMove} />;
+    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} mode={mode} humansLeft={humansLeft} hostName={players.find(p => !p.isBot)?.name} onMouseMove={handleMouseMove} />;
 
   if ((phase as string) === 'bonusReveal')
     return <BonusReveal players={results} localPlayerId={localPlayerId} />;
