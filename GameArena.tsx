@@ -318,8 +318,7 @@ const GameArena: React.FC<GameArenaProps> = ({
           <div style={{ textAlign: 'center' }}>
             <div style={{
               fontSize: '180px', fontWeight: '900', lineHeight: 1,
-              background: isZombieMode ? 'linear-gradient(135deg, #4dff6e, #a0ff4b)' : 'linear-gradient(135deg, #FF4B6E, #C84BFF)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              color: isZombieMode ? '#4dff6e' : '#FF4B6E',
               animation: 'popIn 0.3s ease-out',
             }}>{countdown}</div>
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '20px', marginTop: '16px' }}>
@@ -510,7 +509,7 @@ const GameArena: React.FC<GameArenaProps> = ({
       })}
 
       <style>{`
-        @keyframes popIn { from { transform: translateX(-50%) scale(0.5); opacity:0; } to { transform: translateX(-50%) scale(1); opacity:1; } }
+        @keyframes popIn { from { transform: scale(0.5); opacity:0; } to { transform: scale(1); opacity:1; } }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
         @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
         @keyframes glow { from { box-shadow:0 0 20px rgba(255,75,110,0.4); } to { box-shadow:0 0 60px rgba(255,75,110,0.8); } }
