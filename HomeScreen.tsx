@@ -7,15 +7,27 @@ interface HomeScreenProps {
   onBrowseRooms: () => void;
   publicRooms: PublicRoom[];
   connected: boolean;
+  connectingSeconds?: number;
   error?: string;
 }
 
+function getConnectionMessage(seconds: number): { text: string; emoji: string; color: string } {
+  if (seconds < 3)  return { text: 'Connecting to server...', emoji: '🔄', color: 'rgba(255,255,255,0.4)' };
+  if (seconds < 8)  return { text: 'Waking up the server...', emoji: '⏳', color: 'rgba(255,183,75,0.8)' };
+  if (seconds < 15) return { text: 'Server is starting up, hang tight...', emoji: '☕', color: 'rgba(255,183,75,0.8)' };
+  if (seconds < 25) return { text: 'Almost there, server is warming up...', emoji: '🔥', color: 'rgba(255,140,75,0.9)' };
+  if (seconds < 40) return { text: 'This is taking a bit — nearly ready!', emoji: '🐢', color: 'rgba(255,140,75,0.9)' };
+  return { text: 'Any second now, promise...', emoji: '🤞', color: 'rgba(255,75,110,0.9)' };
+}
+
 const HomeScreen: React.FC<HomeScreenProps> = ({
-  onCreateGame, onJoinGame, onBrowseRooms, publicRooms, connected, error,
+  onCreateGame, onJoinGame, onBrowseRooms, publicRooms, connected, connectingSeconds = 0, error,
 }) => {
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [tab, setTab] = useState<'create' | 'join' | 'browse'>('create');
+
+  const connMsg = getConnectionMessage(connectingSeconds);
 
   // Auto-refresh room list every 3s while on Browse tab
   useEffect(() => {
@@ -69,15 +81,37 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
 
         {/* Connection status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '8px', height: '8px', borderRadius: '50%',
-            background: connected ? '#4BFFA5' : '#FF4B6E',
-            boxShadow: connected ? '0 0 8px #4BFFA5' : '0 0 8px #FF4B6E',
-          }} />
-          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
-            {connected ? 'Connected to server' : 'Connecting...'}
-          </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '32px' }}>
+          {connected ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4BFFA5', boxShadow: '0 0 8px #4BFFA5' }} />
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Connected to server</span>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FF4B6E', boxShadow: '0 0 8px #FF4B6E', animation: 'pulseDot 1s ease-in-out infinite' }} />
+                <span style={{ fontSize: '13px', color: connMsg.color, fontWeight: '600', transition: 'color 0.5s' }}>
+                  {connMsg.emoji} {connMsg.text}
+                </span>
+              </div>
+              {connectingSeconds >= 3 && (
+                <div style={{ width: '200px', height: '3px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: '2px',
+                    background: connectingSeconds < 15 ? '#FFB74B' : connectingSeconds < 30 ? '#FF8C4B' : '#FF4B6E',
+                    width: `${Math.min(100, (connectingSeconds / 50) * 100)}%`,
+                    transition: 'width 1s linear, background 0.5s',
+                  }} />
+                </div>
+              )}
+              {connectingSeconds >= 8 && (
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>
+                  {connectingSeconds}s — free servers wake up after being idle
+                </span>
+              )}
+            </>
+          )}
         </div>
 
         {error && (
@@ -236,6 +270,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
         @keyframes float2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(15px,-25px); } }
         @keyframes float3 { 0%,100% { transform: translate(0,0) rotate(15deg); } 50% { transform: translate(-20px,35px) rotate(-5deg); } }
         @keyframes float4 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(25px,-15px) rotate(8deg); } }
+        @keyframes pulseDot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
         html, body, #root { height: auto !important; overflow: visible !important; }
       `}</style>
     </div>
