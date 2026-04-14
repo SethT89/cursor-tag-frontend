@@ -104,8 +104,16 @@ const Index = () => {
           setResults(msg.players);
           setResultMode(msg.mode);
           if (msg.mode === 'zombie') {
-            setPhase('dramaticEnd' as GamePhase);
-            setTimeout(() => setPhase('results'), 4000);
+            // Derive last infected from results as fallback
+            const infected = msg.players
+              .filter((p: Player) => !p.isPatientZero && p.stats?.survivalTime != null)
+              .sort((a: Player, b: Player) => (b.stats?.survivalTime || 0) - (a.stats?.survivalTime || 0));
+            if (infected.length > 0) setLastInfectedId(infected[0].id);
+            setHumansLeft(0);
+            setTimeout(() => {
+              setPhase('dramaticEnd' as GamePhase);
+              setTimeout(() => setPhase('results'), 4000);
+            }, 600);
           } else {
             setPhase('results');
           }
