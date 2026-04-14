@@ -23,6 +23,7 @@ const Index = () => {
   const [isPublic, setIsPublic] = useState(false);
   const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
   const [humansLeft, setHumansLeft] = useState<number | null>(null);
+  const [lastInfectedId, setLastInfectedId] = useState<string>('');
   const [results, setResults] = useState<Player[]>([]);
   const [resultMode, setResultMode] = useState<GameMode>('classic');
   const [error, setError] = useState<string>('');
@@ -95,14 +96,16 @@ const Index = () => {
           if (msg.liveScores) setLiveScores(msg.liveScores);
           if (msg.humansLeft !== undefined) setHumansLeft(msg.humansLeft);
           break;
+        case 'infected':
+          // Track last infected — if humansLeft is about to hit 0, this is the dramatic one
+          setLastInfectedId(msg.victimId);
+          break;
         case 'gameEnded':
           setResults(msg.players);
           setResultMode(msg.mode);
           if (msg.mode === 'zombie') {
-            // Show dramatic overlay on arena for 2.5s, then bonus reveal, then results
             setPhase('dramaticEnd' as GamePhase);
-            setTimeout(() => setPhase('bonusReveal' as GamePhase), 2500);
-            setTimeout(() => setPhase('results'), 5300);
+            setTimeout(() => setPhase('results'), 4000);
           } else {
             setPhase('results');
           }
@@ -180,13 +183,10 @@ const Index = () => {
     return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} mode={mode} isPublic={isPublic} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} onSetMode={handleSetMode} onSetVisibility={handleSetVisibility} />;
 
   if (phase === 'countdown' || phase === 'playing')
-    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} mode={mode} humansLeft={humansLeft} hostName={players.find(p => !p.isBot)?.name} onMouseMove={handleMouseMove} />;
+    return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} mode={mode} humansLeft={humansLeft} hostName={players.find(p => !p.isBot)?.name} lastInfectedId={lastInfectedId} onMouseMove={handleMouseMove} />;
 
   if ((phase as string) === 'dramaticEnd')
-    return <DramaticEnd />;
-
-  if ((phase as string) === 'bonusReveal')
-    return <BonusReveal players={results} localPlayerId={localPlayerId} />;
+    return <DramaticEnd players={results} />;
 
   if (phase === 'results')
     return <ResultsScreen players={results} mode={resultMode} onPlayAgain={handlePlayAgain} onHome={handleHome} />;
@@ -194,54 +194,86 @@ const Index = () => {
   return null;
 };
 
-// ─── Dramatic End Screen ──────────────────────────────────────────────────────
-const DramaticEnd: React.FC = () => {
+
+// ─── Dramatic End Screen (merged Game Over + Bonus) ───────────────────────────
+const DramaticEnd: React.FC<{ players: Player[] }> = ({ players }) => {
+  const survivors = players.filter(p => !p.isZombie && !p.isTurning);
+  const patientZero = players.find(p => p.isPatientZero);
+
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200,
       background: '#000d00',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif", color: 'white',
       animation: 'dramaticBgIn 0.3s ease-out',
       overflow: 'hidden',
     }}>
-      {/* Green fog pulses */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background: 'radial-gradient(ellipse at center, rgba(77,255,110,0.15) 0%, transparent 70%)',
         animation: 'fogPulse 0.8s ease-in-out infinite alternate',
       }} />
 
-      {/* Shake wrapper */}
-      <div style={{ animation: 'dramaticShake 0.6s ease-out', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-        {/* Zombie emoji — grows in */}
+      <div style={{ animation: 'dramaticShake 0.6s ease-out', textAlign: 'center', position: 'relative', zIndex: 1, width: '100%', maxWidth: '400px', padding: '0 24px' }}>
         <div style={{
-          fontSize: '100px', lineHeight: 1, marginBottom: '24px',
+          fontSize: '80px', lineHeight: 1, marginBottom: '16px',
           animation: 'emojiGrow 0.7s cubic-bezier(0.2, 1.5, 0.4, 1) 0.1s both',
           filter: 'drop-shadow(0 0 30px rgba(77,255,110,0.6))',
         }}>🧟</div>
 
-        {/* GAME OVER */}
         <div style={{
-          fontSize: '88px', fontWeight: '900', lineHeight: 1,
-          color: '#4dff6e',
-          textShadow: '0 0 40px rgba(77,255,110,0.9), 0 0 80px rgba(77,255,110,0.5), 0 0 120px rgba(77,255,110,0.3)',
+          fontSize: '72px', fontWeight: '900', lineHeight: 1, color: '#4dff6e',
+          textShadow: '0 0 40px rgba(77,255,110,0.9), 0 0 80px rgba(77,255,110,0.4)',
           animation: 'gameOverSlam 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) 0.3s both',
-          letterSpacing: '-3px',
+          letterSpacing: '-3px', marginBottom: '8px',
         }}>GAME OVER</div>
 
-        {/* Subtext */}
         <div style={{
-          fontSize: '22px', color: 'rgba(77,255,110,0.6)', marginTop: '20px', fontWeight: '600',
-          animation: 'fadeUp 0.5s ease-out 0.8s both',
-        }}>
-          The horde wins 🧟
-        </div>
+          fontSize: '15px', color: 'rgba(77,255,110,0.5)', marginBottom: '28px', fontWeight: '600',
+          animation: 'fadeUp 0.4s ease-out 0.7s both',
+        }}>The horde wins — tallying scores...</div>
+
+        {survivors.length > 0 && (
+          <div style={{
+            background: 'rgba(77,255,110,0.08)', border: '1px solid rgba(77,255,110,0.25)',
+            borderRadius: '14px', padding: '14px 18px', marginBottom: '10px',
+            animation: 'fadeUp 0.4s ease-out 1s both', textAlign: 'left',
+          }}>
+            <div style={{ fontSize: '11px', color: 'rgba(77,255,110,0.5)', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
+              🛡️ Survival Bonus
+            </div>
+            {survivors.map(p => (
+              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>{p.name}</span>
+                <span style={{ fontSize: '15px', fontWeight: '800', color: '#4dff6e', animation: 'bonusPop 0.4s ease-out 1.3s both' }}>+200 pts</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {patientZero && (
+          <div style={{
+            background: 'rgba(255,75,110,0.08)', border: '1px solid rgba(255,75,110,0.25)',
+            borderRadius: '14px', padding: '14px 18px',
+            animation: 'fadeUp 0.4s ease-out 1.2s both', textAlign: 'left',
+          }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,75,110,0.5)', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
+              🧟 Patient Zero — {patientZero.name}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{patientZero.infectCount || 0} infections × 120pts</span>
+              <span style={{ fontSize: '15px', fontWeight: '800', color: '#FF4B6E', animation: 'bonusPop 0.4s ease-out 1.5s both' }}>
+                +{(patientZero.infectCount || 0) * 120} pts
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`
         @keyframes dramaticBgIn { from { opacity:0; } to { opacity:1; } }
-        @keyframes fogPulse { from { opacity:0.6; } to { opacity:1; } }
+        @keyframes fogPulse { from { opacity:0.5; } to { opacity:1; } }
         @keyframes dramaticShake {
           0%   { transform: translate(0,0) rotate(0deg); }
           10%  { transform: translate(-10px,-8px) rotate(-1.5deg); }
@@ -256,94 +288,6 @@ const DramaticEnd: React.FC = () => {
         @keyframes emojiGrow { from { opacity:0; transform:scale(0.1) rotate(-30deg); } 70% { transform:scale(1.2) rotate(5deg); } to { opacity:1; transform:scale(1) rotate(0deg); } }
         @keyframes gameOverSlam { from { opacity:0; transform:scale(3); } 70% { transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-      `}</style>
-    </div>
-  );
-};
-
-// ─── Bonus Reveal Overlay ─────────────────────────────────────────────────────
-const BonusReveal: React.FC<{ players: Player[]; localPlayerId: string }> = ({ players, localPlayerId }) => {
-  const survivors = players.filter(p => !p.isZombie && !p.isTurning);
-  const localPlayer = players.find(p => p.id === localPlayerId);
-  const localIsSurvivor = localPlayer && !localPlayer.isZombie && !localPlayer.isTurning;
-  const localIsPatientZero = localPlayer?.isPatientZero;
-
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
-      background: 'linear-gradient(135deg, #050d05 0%, #0a180a 100%)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      fontFamily: "'Inter', 'Segoe UI', sans-serif", color: 'white',
-      animation: 'fadeInBonus 0.4s ease-out',
-    }}>
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div style={{ fontSize: '48px', marginBottom: '8px' }}>
-          {localIsSurvivor ? '🏆' : localIsPatientZero ? '🧟' : '💀'}
-        </div>
-        <div style={{ fontSize: '28px', fontWeight: '900', marginBottom: '4px' }}>
-          {localIsSurvivor ? 'YOU SURVIVED!' : localIsPatientZero ? 'OUTBREAK OVER' : 'GAME OVER'}
-        </div>
-        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>
-          Tallying final scores...
-        </div>
-      </div>
-
-      {/* Bonus cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '360px', padding: '0 24px' }}>
-        {survivors.length > 0 && (
-          <div style={{
-            background: 'rgba(77,255,110,0.08)', border: '1px solid rgba(77,255,110,0.3)',
-            borderRadius: '16px', padding: '16px 20px',
-            animation: 'bonusSlideIn 0.5s ease-out 0.3s both',
-          }}>
-            <div style={{ fontSize: '12px', color: 'rgba(77,255,110,0.6)', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
-              🛡️ Survival Bonus
-            </div>
-            {survivors.map(p => (
-              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontSize: '14px', fontWeight: p.id === localPlayerId ? '800' : '500', color: p.id === localPlayerId ? 'white' : 'rgba(255,255,255,0.6)' }}>
-                  {p.name}{p.id === localPlayerId ? ' (you)' : ''}
-                </span>
-                <span style={{ fontSize: '16px', fontWeight: '800', color: '#4dff6e', animation: 'bonusPop 0.4s ease-out 0.8s both' }}>
-                  +200 pts
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {localPlayer && localPlayer.isPatientZero && (
-          <div style={{
-            background: 'rgba(255,75,110,0.08)', border: '1px solid rgba(255,75,110,0.3)',
-            borderRadius: '16px', padding: '16px 20px',
-            animation: 'bonusSlideIn 0.5s ease-out 0.5s both',
-          }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255,75,110,0.6)', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
-              🧟 Patient Zero
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>
-                {localPlayer.infectCount || 0} infections × 120pts
-              </span>
-              <span style={{ fontSize: '16px', fontWeight: '800', color: '#FF4B6E', animation: 'bonusPop 0.4s ease-out 1s both' }}>
-                +{(localPlayer.infectCount || 0) * 120} pts
-              </span>
-            </div>
-          </div>
-        )}
-
-        <div style={{
-          textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.25)',
-          animation: 'bonusSlideIn 0.5s ease-out 1s both',
-          marginTop: '8px',
-        }}>
-          Results in a moment...
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes fadeInBonus { from { opacity:0; } to { opacity:1; } }
-        @keyframes bonusSlideIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
         @keyframes bonusPop { 0% { transform:scale(0.5); opacity:0; } 70% { transform:scale(1.2); } 100% { transform:scale(1); opacity:1; } }
       `}</style>
     </div>
