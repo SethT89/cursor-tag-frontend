@@ -568,11 +568,11 @@ const GameArena: React.FC<GameArenaProps> = ({
         @keyframes zombieGlow { from { box-shadow:0 0 20px rgba(77,255,110,0.3); } to { box-shadow:0 0 50px rgba(77,255,110,0.7); } }
         @keyframes turningFlicker { 0% { opacity:1; } 100% { opacity:0.6; } }
         @keyframes dramaticCursorShake {
-          0%   { transform: translate(-2px,-2px) scale(3); }
-          25%  { transform: translate(4px,2px) scale(3.1); }
-          50%  { transform: translate(-3px,4px) scale(3); }
-          75%  { transform: translate(3px,-3px) scale(3.15); }
-          100% { transform: translate(-2px,-2px) scale(3); }
+          0%   { transform: translate(-2px,-2px) scale(10); }
+          25%  { transform: translate(8px,5px) scale(10.3); }
+          50%  { transform: translate(-6px,8px) scale(10); }
+          75%  { transform: translate(7px,-6px) scale(10.5); }
+          100% { transform: translate(-2px,-2px) scale(10); }
         }
         @keyframes arenaShake {
           0%   { transform: translate(0,0); }
@@ -626,10 +626,10 @@ const RemoteCursor: React.FC<{ player: Player; x: number; y: number; tagDistance
   return (
     <div style={{
       position: 'absolute', left: `${x}%`, top: `${y}%`,
-      transform: isDramatic ? 'translate(-2px, -2px) scale(3)' : 'translate(-2px, -2px)',
+      transform: isDramatic ? 'translate(-2px, -2px) scale(10)' : 'translate(-2px, -2px)',
       pointerEvents: 'none', zIndex: 20,
-      transition: isDramatic ? 'transform 0.3s ease-out' : undefined,
-      animation: isDramatic ? 'dramaticCursorShake 0.15s ease-in-out infinite' : undefined,
+      transition: isDramatic ? 'transform 0.4s ease-out' : undefined,
+      animation: isDramatic ? 'dramaticCursorShake 0.12s ease-in-out infinite' : undefined,
       filter: isDramatic ? 'drop-shadow(0 0 20px #4dff6e)' : undefined,
     }}>
       {/* Tag zone ring */}
