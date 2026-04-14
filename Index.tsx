@@ -99,7 +99,8 @@ const Index = () => {
           setResults(msg.players);
           setResultMode(msg.mode);
           if (msg.mode === 'zombie') {
-            // Wait for dramatic game over overlay to play (2.5s) then show bonus reveal
+            // Show dramatic overlay on arena for 2.5s, then bonus reveal, then results
+            setPhase('dramaticEnd' as GamePhase);
             setTimeout(() => setPhase('bonusReveal' as GamePhase), 2500);
             setTimeout(() => setPhase('results'), 5300);
           } else {
@@ -181,6 +182,9 @@ const Index = () => {
   if (phase === 'countdown' || phase === 'playing')
     return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} mode={mode} humansLeft={humansLeft} hostName={players.find(p => !p.isBot)?.name} onMouseMove={handleMouseMove} />;
 
+  if ((phase as string) === 'dramaticEnd')
+    return <DramaticEnd />;
+
   if ((phase as string) === 'bonusReveal')
     return <BonusReveal players={results} localPlayerId={localPlayerId} />;
 
@@ -188,6 +192,73 @@ const Index = () => {
     return <ResultsScreen players={results} mode={resultMode} onPlayAgain={handlePlayAgain} onHome={handleHome} />;
 
   return null;
+};
+
+// ─── Dramatic End Screen ──────────────────────────────────────────────────────
+const DramaticEnd: React.FC = () => {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200,
+      background: '#000d00',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      animation: 'dramaticBgIn 0.3s ease-out',
+      overflow: 'hidden',
+    }}>
+      {/* Green fog pulses */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse at center, rgba(77,255,110,0.15) 0%, transparent 70%)',
+        animation: 'fogPulse 0.8s ease-in-out infinite alternate',
+      }} />
+
+      {/* Shake wrapper */}
+      <div style={{ animation: 'dramaticShake 0.6s ease-out', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        {/* Zombie emoji — grows in */}
+        <div style={{
+          fontSize: '100px', lineHeight: 1, marginBottom: '24px',
+          animation: 'emojiGrow 0.7s cubic-bezier(0.2, 1.5, 0.4, 1) 0.1s both',
+          filter: 'drop-shadow(0 0 30px rgba(77,255,110,0.6))',
+        }}>🧟</div>
+
+        {/* GAME OVER */}
+        <div style={{
+          fontSize: '88px', fontWeight: '900', lineHeight: 1,
+          color: '#4dff6e',
+          textShadow: '0 0 40px rgba(77,255,110,0.9), 0 0 80px rgba(77,255,110,0.5), 0 0 120px rgba(77,255,110,0.3)',
+          animation: 'gameOverSlam 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) 0.3s both',
+          letterSpacing: '-3px',
+        }}>GAME OVER</div>
+
+        {/* Subtext */}
+        <div style={{
+          fontSize: '22px', color: 'rgba(77,255,110,0.6)', marginTop: '20px', fontWeight: '600',
+          animation: 'fadeUp 0.5s ease-out 0.8s both',
+        }}>
+          The horde wins 🧟
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes dramaticBgIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes fogPulse { from { opacity:0.6; } to { opacity:1; } }
+        @keyframes dramaticShake {
+          0%   { transform: translate(0,0) rotate(0deg); }
+          10%  { transform: translate(-10px,-8px) rotate(-1.5deg); }
+          20%  { transform: translate(10px,8px) rotate(1.5deg); }
+          30%  { transform: translate(-8px,10px) rotate(0deg); }
+          40%  { transform: translate(8px,-10px) rotate(1deg); }
+          50%  { transform: translate(-5px,5px) rotate(-1deg); }
+          60%  { transform: translate(5px,-5px) rotate(0deg); }
+          80%  { transform: translate(-2px,2px) rotate(0.5deg); }
+          100% { transform: translate(0,0) rotate(0deg); }
+        }
+        @keyframes emojiGrow { from { opacity:0; transform:scale(0.1) rotate(-30deg); } 70% { transform:scale(1.2) rotate(5deg); } to { opacity:1; transform:scale(1) rotate(0deg); } }
+        @keyframes gameOverSlam { from { opacity:0; transform:scale(3); } 70% { transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+      `}</style>
+    </div>
+  );
 };
 
 // ─── Bonus Reveal Overlay ─────────────────────────────────────────────────────
