@@ -93,6 +93,7 @@ const Index = () => {
           setMode(msg.mode);
           setCountdown(null);
           setLiveScores([]);
+          setLastInfectedId(''); // reset dramatic cursor from previous game
           setHumansLeft(null);
           setPhase('playing');
           break;
@@ -130,6 +131,8 @@ const Index = () => {
           setMode(msg.mode || 'classic');
           setPhase('lobby');
           setResults([]);
+          setLastInfectedId('');
+          setHumansLeft(null);
           break;
         case 'error':
           setError(msg.message);
