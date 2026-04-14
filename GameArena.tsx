@@ -52,19 +52,28 @@ const GameArena: React.FC<GameArenaProps> = ({
   const [showHostBanner, setShowHostBanner] = useState(true);
   const [dramaticCursorId, setDramaticCursorId] = useState('');
   const dramaticCursorRef = useRef('');
+  const lastInfectedRef = useRef('');
   const prevHumansLeftRef = useRef<number | null>(null);
   const [renderTick, setRenderTick] = useState(0);
 
   const isZombieMode = mode === 'zombie';
 
-  // When last human gets infected, freeze their cursor dramatically
+  // Always keep ref in sync with latest lastInfectedId prop
   useEffect(() => {
-    if (isZombieMode && humansLeft === 0 && prevHumansLeftRef.current !== 0 && lastInfectedId) {
-      setDramaticCursorId(lastInfectedId);
-      dramaticCursorRef.current = lastInfectedId;
+    if (lastInfectedId) lastInfectedRef.current = lastInfectedId;
+  }, [lastInfectedId]);
+
+  // Fire dramatic effect when humansLeft hits 0 — use ref so ID is always current
+  useEffect(() => {
+    if (isZombieMode && humansLeft === 0 && prevHumansLeftRef.current !== 0) {
+      const id = lastInfectedRef.current;
+      if (id) {
+        setDramaticCursorId(id);
+        dramaticCursorRef.current = id;
+      }
     }
     prevHumansLeftRef.current = humansLeft ?? null;
-  }, [humansLeft, isZombieMode, lastInfectedId]);
+  }, [humansLeft, isZombieMode]);
 
   // Hide host banner after 1.8s
   useEffect(() => {
