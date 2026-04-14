@@ -7,7 +7,7 @@ import { Player, LiveScore, GamePhase, GameMode, ServerMessage, PublicRoom } fro
 import { useGameSocket } from './useGameSocket';
 
 const Index = () => {
-  const { send, onMessage, connected } = useGameSocket();
+  const { send, onMessage, connected, connectingSeconds } = useGameSocket();
 
   const [phase, setPhase] = useState<GamePhase>('home');
   const [roomCode, setRoomCode] = useState('');
@@ -172,7 +172,7 @@ const Index = () => {
   }, []);
 
   if (phase === 'home')
-    return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} onBrowseRooms={handleBrowseRooms} publicRooms={publicRooms} connected={connected} error={error} />;
+    return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} onBrowseRooms={handleBrowseRooms} publicRooms={publicRooms} connected={connected} connectingSeconds={connectingSeconds} error={error} />;
 
   if (phase === 'lobby')
     return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} mode={mode} isPublic={isPublic} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} onSetMode={handleSetMode} onSetVisibility={handleSetVisibility} />;
