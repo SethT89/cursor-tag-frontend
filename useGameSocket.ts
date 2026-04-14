@@ -9,14 +9,33 @@ export function useGameSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const handlersRef = useRef<MessageHandler[]>([]);
   const [connected, setConnected] = useState(false);
+  const [connectingSeconds, setConnectingSeconds] = useState(0);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
+  const connectStartRef = useRef<number>(Date.now());
+  const tickerRef = useRef<ReturnType<typeof setInterval>>();
+
+  const startTicker = useCallback(() => {
+    connectStartRef.current = Date.now();
+    setConnectingSeconds(0);
+    if (tickerRef.current) clearInterval(tickerRef.current);
+    tickerRef.current = setInterval(() => {
+      setConnectingSeconds(Math.floor((Date.now() - connectStartRef.current) / 1000));
+    }, 1000);
+  }, []);
+
+  const stopTicker = useCallback(() => {
+    if (tickerRef.current) clearInterval(tickerRef.current);
+    setConnectingSeconds(0);
+  }, []);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    startTicker();
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
     ws.onopen = () => {
       setConnected(true);
+      stopTicker();
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
     };
     ws.onmessage = (event) => {
@@ -27,15 +46,17 @@ export function useGameSocket() {
     };
     ws.onclose = () => {
       setConnected(false);
+      startTicker();
       reconnectTimer.current = setTimeout(connect, 2000);
     };
     ws.onerror = () => { ws.close(); };
-  }, []);
+  }, [startTicker, stopTicker]);
 
   useEffect(() => {
     connect();
     return () => {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      if (tickerRef.current) clearInterval(tickerRef.current);
       wsRef.current?.close();
     };
   }, [connect]);
@@ -53,5 +74,5 @@ export function useGameSocket() {
     };
   }, []);
 
-  return { send, onMessage, connected };
+  return { send, onMessage, connected, connectingSeconds };
 }
