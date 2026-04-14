@@ -17,6 +17,7 @@ interface GameArenaProps {
   mode?: GameMode;
   humansLeft?: number | null;
   hostName?: string;
+  lastInfectedId?: string;
   onMouseMove: (x: number, y: number) => void;
 }
 
@@ -34,7 +35,7 @@ function zombifyColor(color: string, isZombie: boolean, isTurning: boolean): str
 
 const GameArena: React.FC<GameArenaProps> = ({
   players, localPlayerId, itPlayerId, timeLeft, countdown, liveScores = [],
-  tagDistance = 8, mode = 'classic', humansLeft, hostName, onMouseMove,
+  tagDistance = 8, mode = 'classic', humansLeft, hostName, lastInfectedId = '', onMouseMove,
 }) => {
   const arenaRef       = useRef<HTMLDivElement>(null);
   const canvasRef      = useRef<HTMLCanvasElement>(null);
@@ -49,9 +50,21 @@ const GameArena: React.FC<GameArenaProps> = ({
   const prevScoresRef  = useRef<Map<string, number>>(new Map());
   const flashRef       = useRef<Map<string, { delta: number; at: number }>>(new Map());
   const [showHostBanner, setShowHostBanner] = useState(true);
+  const [dramaticCursorId, setDramaticCursorId] = useState('');
+  const dramaticCursorRef = useRef('');
+  const prevHumansLeftRef = useRef<number | null>(null);
   const [renderTick, setRenderTick] = useState(0);
 
   const isZombieMode = mode === 'zombie';
+
+  // When last human gets infected, freeze their cursor dramatically
+  useEffect(() => {
+    if (isZombieMode && humansLeft === 0 && prevHumansLeftRef.current !== 0 && lastInfectedId) {
+      setDramaticCursorId(lastInfectedId);
+      dramaticCursorRef.current = lastInfectedId;
+    }
+    prevHumansLeftRef.current = humansLeft ?? null;
+  }, [humansLeft, isZombieMode, lastInfectedId]);
 
   // Hide host banner after 1.8s
   useEffect(() => {
@@ -103,6 +116,34 @@ const GameArena: React.FC<GameArenaProps> = ({
       // Speed dampening: lerp localPos toward targetMouse based on zombie state
       const isZ = player.isZombie;
       const isT = player.isTurning;
+      const isDramaticLocal = dramaticCursorRef.current === localPlayerId;
+
+      // Dramatic last infection — freeze cursor, shake, grow, turn green
+      if (isDramaticLocal) {
+        // Freeze position — don't update from mouse
+        const shakeX = (Math.random() - 0.5) * 16;
+        const shakeY = (Math.random() - 0.5) * 16;
+        const px = (localPosRef.current.x / 100) * canvas.width + shakeX;
+        const py = (localPosRef.current.y / 100) * canvas.height + shakeY;
+        const scale = 1 + Math.min(3, (Date.now() - (dramaticCursorRef.current ? Date.now() : 0)) / 300);
+
+        // Green glow
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.scale(scale, scale);
+        const cursorPath2 = new Path2D('M0 0 L0 28 L7 21 L12 32 L16 30 L11 19 L20 19 Z');
+        ctx.fillStyle = '#4dff6e';
+        ctx.shadowColor = '#4dff6e';
+        ctx.shadowBlur = 30;
+        ctx.fill(cursorPath2);
+        ctx.strokeStyle = '#001a00';
+        ctx.lineWidth = 1.5;
+        ctx.stroke(cursorPath2);
+        ctx.restore();
+        animFrameRef.current = requestAnimationFrame(draw);
+        return;
+      }
+
       const lerpFactor = isT ? 0.04 : isZ ? 0.07 : 1.0;
       if (lerpFactor < 1.0) {
         localPosRef.current.x += (targetMouseRef.current.x - localPosRef.current.x) * lerpFactor;
@@ -262,6 +303,7 @@ const GameArena: React.FC<GameArenaProps> = ({
       overflow: 'hidden', position: 'relative', cursor: 'none',
       fontFamily: "'Inter', 'Segoe UI', sans-serif",
       transition: 'background 1s ease',
+      animation: dramaticCursorId ? 'arenaShake 0.5s ease-out' : undefined,
     }}
       ref={arenaRef}
       onMouseMove={handleMouseMove}
@@ -506,7 +548,7 @@ const GameArena: React.FC<GameArenaProps> = ({
       {/* Remote cursors */}
       {players.filter(p => p.id !== localPlayerId).map(p => {
         const pos = getPos(p);
-        return <RemoteCursor key={p.id} player={p} x={pos.x} y={pos.y} tagDistance={tagDistance} mode={mode} />;
+        return <RemoteCursor key={p.id} player={p} x={pos.x} y={pos.y} tagDistance={tagDistance} mode={mode} isDramatic={p.id === dramaticCursorId} />;
       })}
 
       <style>{`
@@ -516,7 +558,24 @@ const GameArena: React.FC<GameArenaProps> = ({
         @keyframes glow { from { box-shadow:0 0 20px rgba(255,75,110,0.4); } to { box-shadow:0 0 60px rgba(255,75,110,0.8); } }
         @keyframes zombieGlow { from { box-shadow:0 0 20px rgba(77,255,110,0.3); } to { box-shadow:0 0 50px rgba(77,255,110,0.7); } }
         @keyframes turningFlicker { 0% { opacity:1; } 100% { opacity:0.6; } }
-        @keyframes rankMove { 0% { transform:translateY(-8px); opacity:0.5; } 100% { transform:translateY(0); opacity:1; } }
+        @keyframes dramaticCursorShake {
+          0%   { transform: translate(-2px,-2px) scale(3); }
+          25%  { transform: translate(4px,2px) scale(3.1); }
+          50%  { transform: translate(-3px,4px) scale(3); }
+          75%  { transform: translate(3px,-3px) scale(3.15); }
+          100% { transform: translate(-2px,-2px) scale(3); }
+        }
+        @keyframes arenaShake {
+          0%   { transform: translate(0,0); }
+          10%  { transform: translate(-12px,-8px); }
+          20%  { transform: translate(12px,8px); }
+          30%  { transform: translate(-10px,12px); }
+          40%  { transform: translate(10px,-10px); }
+          50%  { transform: translate(-6px,6px); }
+          60%  { transform: translate(6px,-6px); }
+          80%  { transform: translate(-3px,3px); }
+          100% { transform: translate(0,0); }
+        }
         @keyframes scoreFlash { 0% { opacity:1; transform:translateY(0); } 100% { opacity:0; transform:translateY(-12px); } }
         @keyframes scorePop { 0% { transform:scale(1.4); } 100% { transform:scale(1); } }
         @keyframes hostBannerIn { from { opacity:0; transform:translate(-50%,-50%) scale(0.85); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
@@ -549,16 +608,20 @@ const GameArena: React.FC<GameArenaProps> = ({
 
 const CURSOR_ARROW = `M0 0 L0 28 L7 21 L12 32 L16 30 L11 19 L20 19 Z`;
 
-const RemoteCursor: React.FC<{ player: Player; x: number; y: number; tagDistance: number; mode: GameMode }> = ({ player, x, y, tagDistance, mode }) => {
+const RemoteCursor: React.FC<{ player: Player; x: number; y: number; tagDistance: number; mode: GameMode; isDramatic?: boolean }> = ({ player, x, y, tagDistance, mode, isDramatic }) => {
   const { color, name, isIt, immune, isZombie, isTurning } = player;
   const isZombieMode = mode === 'zombie';
-  const drawColor = zombifyColor(color, !!isZombie, !!isTurning);
+  const drawColor = isDramatic ? '#4dff6e' : zombifyColor(color, !!isZombie, !!isTurning);
   const showTagRing = isZombieMode ? (isZombie && !isTurning) : isIt;
 
   return (
     <div style={{
       position: 'absolute', left: `${x}%`, top: `${y}%`,
-      transform: 'translate(-2px, -2px)', pointerEvents: 'none', zIndex: 20,
+      transform: isDramatic ? 'translate(-2px, -2px) scale(3)' : 'translate(-2px, -2px)',
+      pointerEvents: 'none', zIndex: 20,
+      transition: isDramatic ? 'transform 0.3s ease-out' : undefined,
+      animation: isDramatic ? 'dramaticCursorShake 0.15s ease-in-out infinite' : undefined,
+      filter: isDramatic ? 'drop-shadow(0 0 20px #4dff6e)' : undefined,
     }}>
       {/* Tag zone ring */}
       {showTagRing && (
