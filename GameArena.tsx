@@ -49,19 +49,9 @@ const GameArena: React.FC<GameArenaProps> = ({
   const prevScoresRef  = useRef<Map<string, number>>(new Map());
   const flashRef       = useRef<Map<string, { delta: number; at: number }>>(new Map());
   const [showHostBanner, setShowHostBanner] = useState(true);
-  const [dramaticGameOver, setDramaticGameOver] = useState(false);
-  const prevHumansLeftRef = useRef<number | null>(null);
   const [renderTick, setRenderTick] = useState(0);
 
   const isZombieMode = mode === 'zombie';
-
-  // Trigger dramatic game over when last human gets infected
-  useEffect(() => {
-    if (isZombieMode && humansLeft === 0 && prevHumansLeftRef.current !== 0) {
-      setDramaticGameOver(true);
-    }
-    prevHumansLeftRef.current = humansLeft ?? null;
-  }, [humansLeft, isZombieMode]);
 
   // Hide host banner after 1.8s
   useEffect(() => {
@@ -134,7 +124,8 @@ const GameArena: React.FC<GameArenaProps> = ({
       }
 
       // Tag zone ring (classic IT or zombie)
-      const showRing = isZombieMode ? isZ && !isT : isIt;
+      const isZM = modeRef.current === 'zombie';
+      const showRing = isZM ? isZ && !isT : isIt;
       if (showRing) {
         const tagRingRadius = (tagDistRef.current / 100) * canvas.width;
         const pulse = (Math.sin(Date.now() / 400) + 1) / 2;
@@ -150,7 +141,7 @@ const GameArena: React.FC<GameArenaProps> = ({
       }
 
       // Immune ring (classic only)
-      if (immune && !isZombieMode) {
+      if (immune && !isZM) {
         ctx.beginPath();
         ctx.arc(px + 10, py + 14, 20, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(255,255,255,0.4)';
@@ -180,7 +171,6 @@ const GameArena: React.FC<GameArenaProps> = ({
       ctx.shadowColor = showRing ? drawColor : 'transparent';
       ctx.shadowBlur = showRing ? 12 : 0;
       if (isZ) {
-        // Slightly wobbly for zombies
         const wobble = Math.sin(Date.now() / 150) * 1.5;
         ctx.rotate((wobble * Math.PI) / 180);
       }
@@ -195,19 +185,19 @@ const GameArena: React.FC<GameArenaProps> = ({
       ctx.font = '16px serif';
       if (isZ) ctx.fillText('🧟', px - 2, py - 6);
       else if (isT) ctx.fillText('😱', px + 2, py - 6);
-      else if (isIt && !isZombieMode) ctx.fillText('👑', px + 2, py - 6);
+      else if (isIt && !isZM) ctx.fillText('👑', px + 2, py - 6);
 
       // Name tag
-      const tag = player.name + (isZ ? ' 🧟' : isT ? ' 😱' : isIt && !isZombieMode ? ' 🏷️' : '');
+      const tag = player.name + (isZ ? ' 🧟' : isT ? ' 😱' : isIt && !isZM ? ' 🏷️' : '');
       ctx.font = '600 12px Inter, sans-serif';
       const tw = ctx.measureText(tag).width;
       const pad = 6;
-      const tagBg = isZ ? ZOMBIE_DARK : isT ? 'rgba(30,40,0,0.85)' : isIt && !isZombieMode ? player.color : 'rgba(0,0,0,0.75)';
+      const tagBg = isZ ? ZOMBIE_DARK : isT ? 'rgba(30,40,0,0.85)' : isIt && !isZM ? player.color : 'rgba(0,0,0,0.75)';
       ctx.fillStyle = tagBg;
       ctx.beginPath();
       (ctx as any).roundRect(px + 26, py, tw + pad * 2, 20, 4);
       ctx.fill();
-      ctx.strokeStyle = isZ ? ZOMBIE_COLOR : isT ? TURNING_COLOR : isIt && !isZombieMode ? 'white' : 'rgba(255,255,255,0.15)';
+      ctx.strokeStyle = isZ ? ZOMBIE_COLOR : isT ? TURNING_COLOR : isIt && !isZM ? 'white' : 'rgba(255,255,255,0.15)';
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.fillStyle = isZ ? ZOMBIE_COLOR : 'white';
@@ -509,42 +499,6 @@ const GameArena: React.FC<GameArenaProps> = ({
             color: 'white', animation: 'glow 1s ease-in-out infinite alternate', whiteSpace: 'nowrap',
           }}>
             ⚡ YOU ARE IT — TAG SOMEONE! ⚡
-          </div>
-        </div>
-      )}
-
-      {/* Dramatic Game Over overlay — zombie mode last infection */}
-      {dramaticGameOver && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 150,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(0,0,0,0)',
-          animation: 'gameOverBg 0.4s ease-out 0.2s forwards',
-          pointerEvents: 'none',
-        }}>
-          {/* Screen shake wrapper */}
-          <div style={{ animation: 'screenShake 0.5s ease-out', textAlign: 'center' }}>
-            {/* Big zombie emoji that grows */}
-            <div style={{
-              fontSize: '80px', lineHeight: 1, marginBottom: '16px',
-              animation: 'emojiPop 0.6s ease-out 0.1s both',
-            }}>🧟</div>
-
-            {/* GAME OVER text */}
-            <div style={{
-              fontSize: '96px', fontWeight: '900', lineHeight: 1,
-              color: '#4dff6e',
-              textShadow: '0 0 40px rgba(77,255,110,0.8), 0 0 80px rgba(77,255,110,0.4)',
-              animation: 'gameOverSlam 0.5s cubic-bezier(0.2, 1.5, 0.5, 1) 0.2s both',
-              letterSpacing: '-4px',
-            }}>GAME OVER</div>
-
-            <div style={{
-              fontSize: '22px', color: 'rgba(77,255,110,0.7)', marginTop: '16px', fontWeight: '600',
-              animation: 'gameOverSlam 0.4s ease-out 0.6s both',
-            }}>
-              The horde wins 🧟
-            </div>
           </div>
         </div>
       )}
