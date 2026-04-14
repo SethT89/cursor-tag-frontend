@@ -99,8 +99,9 @@ const Index = () => {
           setResults(msg.players);
           setResultMode(msg.mode);
           if (msg.mode === 'zombie') {
-            setPhase('bonusReveal' as GamePhase);
-            setTimeout(() => setPhase('results'), 2800);
+            // Wait for dramatic game over overlay to play (2.5s) then show bonus reveal
+            setTimeout(() => setPhase('bonusReveal' as GamePhase), 2500);
+            setTimeout(() => setPhase('results'), 5300);
           } else {
             setPhase('results');
           }
