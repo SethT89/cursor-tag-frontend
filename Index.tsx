@@ -113,7 +113,7 @@ const Index = () => {
             setTimeout(() => {
               setPhase('dramaticEnd' as GamePhase);
               setTimeout(() => setPhase('results'), 4000);
-            }, 600);
+            }, 2000);
           } else {
             setPhase('results');
           }
