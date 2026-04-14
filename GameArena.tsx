@@ -53,6 +53,8 @@ const GameArena: React.FC<GameArenaProps> = ({
   const prevHumansLeftRef = useRef<number | null>(null);
   const [renderTick, setRenderTick] = useState(0);
 
+  const isZombieMode = mode === 'zombie';
+
   // Trigger dramatic game over when last human gets infected
   useEffect(() => {
     if (isZombieMode && humansLeft === 0 && prevHumansLeftRef.current !== 0) {
@@ -75,7 +77,6 @@ const GameArena: React.FC<GameArenaProps> = ({
 
   const localPlayer = players.find(p => p.id === localPlayerId);
   const itPlayer    = players.find(p => p.id === itPlayerId);
-  const isZombieMode = mode === 'zombie';
   const localIsZombie  = !!(localPlayer?.isZombie);
   const localIsTurning = !!(localPlayer?.isTurning);
 
