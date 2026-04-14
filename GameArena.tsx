@@ -291,7 +291,7 @@ const GameArena: React.FC<GameArenaProps> = ({
 
   const seconds = Math.ceil(timeLeft / 1000);
   const isLow = isZombieMode ? seconds <= 30 : seconds <= 10;
-  const maxDuration = 60;
+  const maxDuration = 10;
   const pct = timeLeft / (maxDuration * 1000);
 
   const bgColor = isZombieMode ? '#050d05' : '#0a0a14';
