@@ -49,7 +49,17 @@ const GameArena: React.FC<GameArenaProps> = ({
   const prevScoresRef  = useRef<Map<string, number>>(new Map());
   const flashRef       = useRef<Map<string, { delta: number; at: number }>>(new Map());
   const [showHostBanner, setShowHostBanner] = useState(true);
+  const [dramaticGameOver, setDramaticGameOver] = useState(false);
+  const prevHumansLeftRef = useRef<number | null>(null);
   const [renderTick, setRenderTick] = useState(0);
+
+  // Trigger dramatic game over when last human gets infected
+  useEffect(() => {
+    if (isZombieMode && humansLeft === 0 && prevHumansLeftRef.current !== 0) {
+      setDramaticGameOver(true);
+    }
+    prevHumansLeftRef.current = humansLeft ?? null;
+  }, [humansLeft, isZombieMode]);
 
   // Hide host banner after 1.8s
   useEffect(() => {
@@ -502,6 +512,42 @@ const GameArena: React.FC<GameArenaProps> = ({
         </div>
       )}
 
+      {/* Dramatic Game Over overlay — zombie mode last infection */}
+      {dramaticGameOver && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 150,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0)',
+          animation: 'gameOverBg 0.4s ease-out 0.2s forwards',
+          pointerEvents: 'none',
+        }}>
+          {/* Screen shake wrapper */}
+          <div style={{ animation: 'screenShake 0.5s ease-out', textAlign: 'center' }}>
+            {/* Big zombie emoji that grows */}
+            <div style={{
+              fontSize: '80px', lineHeight: 1, marginBottom: '16px',
+              animation: 'emojiPop 0.6s ease-out 0.1s both',
+            }}>🧟</div>
+
+            {/* GAME OVER text */}
+            <div style={{
+              fontSize: '96px', fontWeight: '900', lineHeight: 1,
+              color: '#4dff6e',
+              textShadow: '0 0 40px rgba(77,255,110,0.8), 0 0 80px rgba(77,255,110,0.4)',
+              animation: 'gameOverSlam 0.5s cubic-bezier(0.2, 1.5, 0.5, 1) 0.2s both',
+              letterSpacing: '-4px',
+            }}>GAME OVER</div>
+
+            <div style={{
+              fontSize: '22px', color: 'rgba(77,255,110,0.7)', marginTop: '16px', fontWeight: '600',
+              animation: 'gameOverSlam 0.4s ease-out 0.6s both',
+            }}>
+              The horde wins 🧟
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Remote cursors */}
       {players.filter(p => p.id !== localPlayerId).map(p => {
         const pos = getPos(p);
@@ -520,6 +566,21 @@ const GameArena: React.FC<GameArenaProps> = ({
         @keyframes scorePop { 0% { transform:scale(1.4); } 100% { transform:scale(1); } }
         @keyframes hostBannerIn { from { opacity:0; transform:translate(-50%,-50%) scale(0.85); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
         @keyframes hostBannerOut { from { opacity:1; transform:translate(-50%,-50%) scale(1); } to { opacity:0; transform:translate(-50%,-60%) scale(0.9); } }
+        @keyframes screenShake {
+          0%   { transform: translate(0,0) rotate(0deg); }
+          10%  { transform: translate(-8px, -6px) rotate(-1deg); }
+          20%  { transform: translate(8px, 6px) rotate(1deg); }
+          30%  { transform: translate(-6px, 8px) rotate(0deg); }
+          40%  { transform: translate(6px, -8px) rotate(1deg); }
+          50%  { transform: translate(-4px, 4px) rotate(-1deg); }
+          60%  { transform: translate(4px, -4px) rotate(0deg); }
+          70%  { transform: translate(-2px, 2px) rotate(1deg); }
+          80%  { transform: translate(2px, -2px) rotate(0deg); }
+          100% { transform: translate(0,0) rotate(0deg); }
+        }
+        @keyframes gameOverBg { from { background: rgba(0,0,0,0); } to { background: rgba(0,10,0,0.85); } }
+        @keyframes gameOverSlam { from { opacity:0; transform: scale(2.5); } to { opacity:1; transform: scale(1); } }
+        @keyframes emojiPop { from { opacity:0; transform: scale(0.2) rotate(-20deg); } 70% { transform: scale(1.3) rotate(5deg); } to { opacity:1; transform: scale(1) rotate(0deg); } }
         @keyframes tagZonePulse { 0%,100% { opacity:0.3; } 50% { opacity:0.55; } }
         @keyframes zombieZonePulse { 0%,100% { opacity:0.25; } 50% { opacity:0.5; } }
         @keyframes bounce { from { transform:translateY(0); } to { transform:translateY(-4px); } }
