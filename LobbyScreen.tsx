@@ -8,6 +8,7 @@ interface LobbyScreenProps {
   isHost: boolean;
   mode: GameMode;
   isPublic: boolean;
+  gameStarting: boolean;
   onStartGame: () => void;
   onBack: () => void;
   onAddBot: (difficulty: 'easy' | 'medium' | 'hard') => void;
@@ -23,7 +24,7 @@ const DIFFICULTY_CONFIG = {
 };
 
 const LobbyScreen: React.FC<LobbyScreenProps> = ({
-  roomCode, players, localPlayerId, isHost, mode, isPublic, onStartGame, onBack, onAddBot, onRemoveBot, onSetMode, onSetVisibility,
+  roomCode, players, localPlayerId, isHost, mode, isPublic, gameStarting, onStartGame, onBack, onAddBot, onRemoveBot, onSetMode, onSetVisibility,
 }) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [copied, setCopied] = useState(false);
@@ -48,7 +49,37 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
         : 'linear-gradient(135deg, #0f0f1a 0%, #1a0f2e 50%, #0f1a2e 100%)',
       fontFamily: "'Inter', 'Segoe UI', sans-serif",
       color: 'white',
+      position: 'relative',
     }}>
+
+      {/* Game starting overlay */}
+      {gameStarting && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)',
+          animation: 'lobbyBannerIn 0.3s ease-out',
+        }}>
+          <div style={{
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)',
+            border: `1px solid ${mode === 'zombie' ? 'rgba(77,255,110,0.5)' : 'rgba(255,255,255,0.25)'}`,
+            borderRadius: '40px', padding: '16px 36px',
+            display: 'flex', alignItems: 'center', gap: '14px',
+            animation: 'lobbyBannerPop 0.4s cubic-bezier(0.2, 1.5, 0.4, 1)',
+          }}>
+            <span style={{ fontSize: '28px' }}>{mode === 'zombie' ? '🧟' : '🚀'}</span>
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: 'white', marginBottom: '2px' }}>
+                {isHost ? 'Starting the game!' : `${players.find(p => !p.isBot)?.name || 'Host'} started the game!`}
+              </div>
+              <div style={{ fontSize: '13px', color: mode === 'zombie' ? 'rgba(77,255,110,0.7)' : 'rgba(255,255,255,0.45)' }}>
+                {mode === 'zombie' ? 'Brace yourself — the outbreak begins' : 'Get to your cursors'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ width: '100%', maxWidth: '520px', margin: '0 auto', padding: '40px 20px 60px' }}>
 
         {/* Header */}
@@ -325,6 +356,8 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
       <style>{`
         html, body, #root { height: auto !important; overflow: visible !important; }
+        @keyframes lobbyBannerIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes lobbyBannerPop { from { opacity:0; transform:scale(0.8); } 70% { transform:scale(1.05); } to { opacity:1; transform:scale(1); } }
       `}</style>
     </div>
   );
