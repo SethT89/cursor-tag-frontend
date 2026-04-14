@@ -122,7 +122,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
               }}>
                 <div style={{ fontSize: '24px', marginBottom: '4px' }}>🧟</div>
                 <div style={{ fontWeight: '700', fontSize: '13px' }}>Zombie Mode</div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>60s · Up to 12 players</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>10s · Up to 12 players</div>
               </button>
             </div>
             {mode === 'zombie' && (
