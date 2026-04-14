@@ -112,16 +112,22 @@ const Index = () => {
           setResults(msg.players);
           setResultMode(msg.mode);
           if (msg.mode === 'zombie') {
-            // Derive last infected from results as fallback
-            const infected = msg.players
-              .filter((p: Player) => !p.isPatientZero && p.stats?.survivalTime != null)
-              .sort((a: Player, b: Player) => (b.stats?.survivalTime || 0) - (a.stats?.survivalTime || 0));
-            if (infected.length > 0) setLastInfectedId(infected[0].id);
-            setHumansLeft(0);
-            setTimeout(() => {
+            if (msg.reason === 'allInfected') {
+              // Last human was infected — trigger dramatic cursor then end screen
+              const infected = msg.players
+                .filter((p: Player) => !p.isPatientZero && p.stats?.survivalTime != null)
+                .sort((a: Player, b: Player) => (b.stats?.survivalTime || 0) - (a.stats?.survivalTime || 0));
+              if (infected.length > 0) setLastInfectedId(infected[0].id);
+              setHumansLeft(0);
+              setTimeout(() => {
+                setPhase('dramaticEnd' as GamePhase);
+                setTimeout(() => setPhase('results'), 4000);
+              }, 2000);
+            } else {
+              // Timeout — survivors exist, skip dramatic cursor, go straight to end screen
               setPhase('dramaticEnd' as GamePhase);
               setTimeout(() => setPhase('results'), 4000);
-            }, 2000);
+            }
           } else {
             setPhase('results');
           }
