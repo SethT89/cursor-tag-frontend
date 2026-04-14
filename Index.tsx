@@ -24,6 +24,7 @@ const Index = () => {
   const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
   const [humansLeft, setHumansLeft] = useState<number | null>(null);
   const [lastInfectedId, setLastInfectedId] = useState<string>('');
+  const [gameStarting, setGameStarting] = useState(false);
   const [results, setResults] = useState<Player[]>([]);
   const [resultMode, setResultMode] = useState<GameMode>('classic');
   const [error, setError] = useState<string>('');
@@ -76,7 +77,13 @@ const Index = () => {
           break;
         case 'countdown':
           setCountdown(msg.count);
-          if (phase !== 'countdown') setPhase('countdown');
+          if (phase !== 'countdown' && phase !== 'playing') {
+            setGameStarting(true);
+            setTimeout(() => {
+              setGameStarting(false);
+              setPhase('countdown');
+            }, 1500);
+          }
           break;
         case 'gameStarted':
           setPlayers(msg.players);
@@ -188,7 +195,7 @@ const Index = () => {
     return <HomeScreen onCreateGame={handleCreateGame} onJoinGame={handleJoinGame} onBrowseRooms={handleBrowseRooms} publicRooms={publicRooms} connected={connected} connectingSeconds={connectingSeconds} error={error} />;
 
   if (phase === 'lobby')
-    return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} mode={mode} isPublic={isPublic} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} onSetMode={handleSetMode} onSetVisibility={handleSetVisibility} />;
+    return <LobbyScreen roomCode={roomCode} players={players} localPlayerId={localPlayerId} isHost={isHost} mode={mode} isPublic={isPublic} gameStarting={gameStarting} onStartGame={handleStartGame} onBack={handleHome} onAddBot={handleAddBot} onRemoveBot={handleRemoveBot} onSetMode={handleSetMode} onSetVisibility={handleSetVisibility} />;
 
   if (phase === 'countdown' || phase === 'playing')
     return <GameArena players={players} localPlayerId={localPlayerId} itPlayerId={itPlayerId} timeLeft={timeLeft} countdown={phase === 'countdown' ? countdown : null} liveScores={liveScores} tagDistance={tagDistance} mode={mode} humansLeft={humansLeft} hostName={players.find(p => !p.isBot)?.name} lastInfectedId={lastInfectedId} onMouseMove={handleMouseMove} />;
