@@ -75,6 +75,15 @@ const GameArena: React.FC<GameArenaProps> = ({
   }, [humansLeft, isZombieMode]);
 
   useEffect(() => { playersRef.current = players; }, [players]);
+
+  // Reset dramatic cursor when game resets
+  useEffect(() => {
+    if (!lastInfectedId) {
+      setDramaticCursorId('');
+      dramaticCursorRef.current = '';
+      lastInfectedRef.current = '';
+    }
+  }, [lastInfectedId]);
   useEffect(() => { tagDistRef.current = tagDistance; }, [tagDistance]);
   useEffect(() => { modeRef.current = mode; }, [mode]);
 
