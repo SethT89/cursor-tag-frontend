@@ -286,9 +286,9 @@ const DramaticEnd: React.FC<{ players: Player[] }> = ({ players }) => {
               🧟 Patient Zero — {patientZero.name}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{patientZero.infectCount || 0} infections × 150pts</span>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{patientZero.infectCount || 0} infections × 40pts</span>
               <span style={{ fontSize: '15px', fontWeight: '800', color: '#FF4B6E', animation: 'bonusPop 0.4s ease-out 1.5s both' }}>
-                +{(patientZero.infectCount || 0) * 150} pts
+                +{(patientZero.infectCount || 0) * 40} pts
               </span>
             </div>
           </div>
