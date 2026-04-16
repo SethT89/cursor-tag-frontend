@@ -29,7 +29,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
   const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [copied, setCopied] = useState(false);
 
-  const maxPlayers = mode === 'zombie' ? 12 : 8;
+  const maxPlayers = 12;
   const humanPlayers = players.filter(p => !p.isBot);
   const bots = players.filter(p => p.isBot);
   const canAddBot = players.length < maxPlayers;
