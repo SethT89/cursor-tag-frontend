@@ -112,7 +112,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
               }}>
                 <div style={{ fontSize: '24px', marginBottom: '4px' }}>🏷️</div>
                 <div style={{ fontWeight: '700', fontSize: '13px' }}>Classic Tag</div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>60s · Up to 8 players</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>60s · Up to 12 players</div>
               </button>
               <button onClick={() => onSetMode('zombie')} style={{
                 flex: 1, padding: '14px 10px', borderRadius: '12px', cursor: 'pointer',
